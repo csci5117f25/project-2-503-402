@@ -42,15 +42,20 @@ The home page of our mobile app displays the current logged-in user’s entries 
 ### Create Review
 ![Create Review](/mockups/create_review.jpg)
 
-This is our “Create Review” page, where users can add a new film by filling out a form with the film’s title and rating. After entering the title, they have the option to autofill the film’s metadata using an API. Once the metadata is populated, the user only needs to enter their thoughts about the film and their rating.
+This is our “Create Review” page, where users can add a new film by filling out a form with the film’s title and rating. After entering the title, they have the option to autofill the film’s metadata using an API (planning to use TMDB). Once the metadata is populated, the user only needs to enter their thoughts about the film and their rating.
 ### Scan Profile
 ![Scan Profile](/mockups/scanpage.jpg)
 
-This is the page where a user can generate a compatibility report. It features an in-app camera used to scan a QR code containing another user’s data, which is required to create the compatibility report. Once scanning is complete, the page will refresh with the computed report. 
+This is the page where a user can generate a compatibility report. It features an in-app camera used to scan a QR code containing another user’s data, which is required to create the compatibility report. Once scanning is complete, the page will refresh with the computed report.  Our original pitch involved sharing data over NFC, but according to mozilla compatability reports, NFC is available on few devices; thus, we pivoted to a more universal solution.
 ### Compatibility Report
 ![](/mockups/similiarityreport.jpg)
 
 This page is displayed after a user successfully scans a QR code and a compatibility score is generated. It shows the compatibility score along with the information used to calculate it. The page is divided into two sections: Conflicting Views, which lists movies where both users gave vastly different ratings (for example, one rated it 5/5 while the other rated it 1/5), and Similar Views, which highlights movies where the users shared similar opinions.
+
+### 'Profile' page
+![Profile](/mockups/profile.jpg)
+
+The 'profile' page of our app is not really a profile in the traditional sense.  This page will merely show your linked google account, a quick statistical summary of interesting datapoints to be used in similarity reports (think favorite genere, average rating ...), and a list of all draft posts a user has not completed yet.
 
 ## Testing Notes
 
