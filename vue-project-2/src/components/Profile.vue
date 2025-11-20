@@ -1,10 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useCurrentUser } from 'vuefire'
 import { Upload, Film, BarChart3 } from 'lucide-vue-next'
 
-const profileImage = ref<string | null>(null)
-const userName = ref('John Doe')
-const fileInput = ref<HTMLInputElement | null>(null)
+const currentUser = useCurrentUser()
+
+const user = computed(() => {
+  if (!currentUser.value) return null
+  return {
+    displayName: currentUser.value.displayName || 'User',
+    email: currentUser.value.email,
+    photoURL: currentUser.value.photoURL,
+    uid: currentUser.value.uid
+  }
+})
 
 const stats = ref({
   moviesWatched: 142,
@@ -43,106 +52,84 @@ const movies = ref([
     poster: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=300&h=450&fit=crop'
   }
 ])
-
-const handleImageUpload = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      profileImage.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
-  }
-}
-
-const triggerFileInput = () => {
-  fileInput.value?.click()
-}
 </script>
 
 <template>
   <div class="profile-container">
-    <div class="profile-header">
-      <div class="profile-image-section">
-        <div class="profile-image-wrapper">
-          <img
-            v-if="profileImage"
-            :src="profileImage"
-            alt="Profile"
-            class="profile-image"
-          />
-          <div v-else class="profile-image-placeholder">
-            <Upload :size="48" />
+    <div v-if="!user" class="not-logged-in">
+      <div class="icon">🔒</div>
+      <h2>Please Log In</h2>
+      <p>You need to be logged in to view your profile.</p>
+    </div>
+
+    <template v-else>
+      <div class="profile-header">
+        <div class="profile-image-section">
+          <div class="profile-image-wrapper">
+            <img
+              v-if="user.photoURL"
+              :src="user.photoURL"
+              :alt="user.displayName"
+              class="profile-image"
+            />
+            <div v-else class="profile-image-placeholder">
+              {{ user.displayName[0].toUpperCase() }}
+            </div>
           </div>
-          <input
-            ref="fileInput"
-            type="file"
-            @change="handleImageUpload"
-            accept="image/*"
-            style="display: none"
-          />
-          <button @click="triggerFileInput" class="upload-button">
-            Upload Image
-          </button>
+        </div>
+
+        <div class="profile-info">
+          <h1 class="user-name">{{ user.displayName }}</h1>
+          <p class="user-email">{{ user.email }}</p>
         </div>
       </div>
 
-      <div class="profile-info">
-        <input
-          v-model="userName"
-          type="text"
-          placeholder="Enter your name"
-          class="name-input"
-        />
+      <!-- Statistics Summary Section -->
+      <div class="section-divider">
+        <BarChart3 :size="20" />
+        <h2>Statistics Summary</h2>
       </div>
-    </div>
 
-    <!-- Statistics Summary Section -->
-    <div class="section-divider">
-      <BarChart3 :size="20" />
-      <h2>Statistics Summary</h2>
-    </div>
-
-    <div class="statistics-section">
-      <div class="stat-card">
-        <h3>{{ stats.moviesWatched }}</h3>
-        <p>Movies Watched</p>
-      </div>
-      <div class="stat-card">
-        <h3>{{ stats.totalHours }}</h3>
-        <p>Hours Watched</p>
-      </div>
-      <div class="stat-card">
-        <h3>{{ stats.favoriteGenre }}</h3>
-        <p>Favorite Genre</p>
-      </div>
-      <div class="stat-card">
-        <h3>{{ stats.averageRating }}</h3>
-        <p>Avg Rating</p>
-      </div>
-    </div>
-
-    <!-- Movie Cards Section -->
-    <div class="section-divider">
-      <Film :size="20" />
-      <h2>Your Movie Collection</h2>
-    </div>
-
-    <div class="movies-section">
-      <div
-        v-for="movie in movies"
-        :key="movie.id"
-        class="movie-card"
-      >
-        <img :src="movie.poster" :alt="movie.title" class="movie-poster" />
-        <div class="movie-info">
-          <h3>{{ movie.title }}</h3>
-          <p>{{ movie.year }}</p>
-          <div class="movie-rating">⭐ {{ movie.rating }}</div>
+      <div class="statistics-section">
+        <div class="stat-card">
+          <h3>{{ stats.moviesWatched }}</h3>
+          <p>Movies Watched</p>
+        </div>
+        <div class="stat-card">
+          <h3>{{ stats.totalHours }}</h3>
+          <p>Hours Watched</p>
+        </div>
+        <div class="stat-card">
+          <h3>{{ stats.favoriteGenre }}</h3>
+          <p>Favorite Genre</p>
+        </div>
+        <div class="stat-card">
+          <h3>{{ stats.averageRating }}</h3>
+          <p>Avg Rating</p>
         </div>
       </div>
-    </div>
+
+      <!-- Movie Cards Section -->
+      <div class="section-divider">
+        <Film :size="20" />
+        <h2>Your Movie Collection</h2>
+      </div>
+
+      <div class="movies-section">
+        <div
+          v-for="movie in movies"
+          :key="movie.id"
+          class="movie-card"
+        >
+          <img :src="movie.poster" :alt="movie.title" class="movie-poster" />
+          <div class="movie-info">
+            <h3>{{ movie.title }}</h3>
+            <p>{{ movie.year }}</p>
+            <div class="movie-rating">⭐ {{ movie.rating }}</div>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -155,12 +142,41 @@ const triggerFileInput = () => {
   background: linear-gradient(to bottom, #f9fafb, #ffffff);
 }
 
+.not-logged-in {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-top: 3rem;
+}
+
+.not-logged-in .icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.not-logged-in h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.not-logged-in p {
+  font-size: 1.1rem;
+  color: #666;
+}
+
 .profile-header {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 3rem;
   margin-bottom: 3rem;
+  background: white;
+  padding: 2rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 @media (max-width: 768px) {
@@ -189,55 +205,44 @@ const triggerFileInput = () => {
   height: 150px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid #3b82f6;
+  border: 4px solid #667eea;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .profile-image-placeholder {
   width: 150px;
   height: 150px;
   border-radius: 50%;
-  background: #e5e7eb;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
-  border: 4px solid #d1d5db;
-}
-
-.upload-button {
-  padding: 0.5rem 1.5rem;
-  background: #3b82f6;
   color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background 0.2s;
-}
-
-.upload-button:hover {
-  background: #2563eb;
+  border: 4px solid #667eea;
+  font-size: 4rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .profile-info {
-  width: 100%;
-  max-width: 400px;
+  flex: 1;
+  min-width: 0;
+  overflow: visible;
 }
 
-.name-input {
-  width: 100%;
-  padding: 0.75rem;
-  font-size: 1.5rem;
-  text-align: center;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  transition: border-color 0.2s;
+.user-name {
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  word-break: break-word;
 }
 
-.name-input:focus {
-  outline: none;
-  border-color: #3b82f6;
+.user-email {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #6b7280;
+  word-break: break-word;
 }
 
 .section-divider {
@@ -269,6 +274,11 @@ const triggerFileInput = () => {
   color: white;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
 }
 
 .stat-card h3 {
