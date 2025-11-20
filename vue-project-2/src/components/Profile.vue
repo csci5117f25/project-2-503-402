@@ -63,7 +63,6 @@ const triggerFileInput = () => {
 
 <template>
   <div class="profile-container">
-    <!-- Profile Header -->
     <div class="profile-header">
       <div class="profile-image-section">
         <div class="profile-image-wrapper">
@@ -149,9 +148,11 @@ const triggerFileInput = () => {
 
 <style scoped>
 .profile-container {
+  min-height: 100vh;
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  background: linear-gradient(to bottom, #f9fafb, #ffffff);
 }
 
 .profile-header {
