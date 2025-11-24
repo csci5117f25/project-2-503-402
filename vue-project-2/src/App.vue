@@ -65,20 +65,7 @@ async function logout() {
               </svg>
               Sign in with Google
             </button>
-
             <div v-else class="user-section">
-              <img
-                v-if="user.photoURL && !avatarError"
-                :key="user.uid"
-                :src="user.photoURL"
-                :alt="user.displayName || 'User'"
-                class="user-avatar"
-                crossorigin="anonymous"
-                @error="handleAvatarError"
-              />
-              <div v-else class="user-avatar-placeholder">
-                {{ (user.displayName || user.email || 'U')[0].toUpperCase() }}
-              </div>
               <span class="user-name">{{ user.displayName || user.email }}</span>
               <button @click="logout" class="auth-btn logout-btn">
                 Log out
@@ -230,8 +217,9 @@ nav a.router-link-active {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
+  flex-shrink: 1;
 }
-
 .user-avatar {
   width: 36px;
   height: 36px;
