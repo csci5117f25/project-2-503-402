@@ -2,11 +2,12 @@
 import { RouterLink, RouterView } from 'vue-router'
 import { useCurrentUser, useFirebaseAuth } from 'vuefire'
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
-import { provide, computed } from 'vue'
+import { provide, computed, ref } from 'vue'
 
 const user = useCurrentUser()
 const auth = useFirebaseAuth()
 const provider = new GoogleAuthProvider()
+const avatarError = ref(false)
 
 // Provide user data to child components (like Profile.vue)
 const userData = computed(() => {
@@ -14,12 +15,17 @@ const userData = computed(() => {
   return {
     displayName: user.value.displayName || 'User',
     email: user.value.email,
-    photoURL: user.value.photoURL,
+    photoURL: user.value.photoURL || null,
     uid: user.value.uid
   }
 })
 
 provide('userData', userData)
+
+const handleAvatarError = () => {
+  console.log('Avatar image failed to load:', user.value?.photoURL)
+  avatarError.value = true
+}
 
 async function login() {
   try {
@@ -62,10 +68,13 @@ async function logout() {
 
             <div v-else class="user-section">
               <img
-                v-if="user.photoURL"
+                v-if="user.photoURL && !avatarError"
+                :key="user.uid"
                 :src="user.photoURL"
                 :alt="user.displayName || 'User'"
                 class="user-avatar"
+                crossorigin="anonymous"
+                @error="handleAvatarError"
               />
               <div v-else class="user-avatar-placeholder">
                 {{ (user.displayName || user.email || 'U')[0].toUpperCase() }}

@@ -10,10 +10,17 @@ const user = computed(() => {
   return {
     displayName: currentUser.value.displayName || 'User',
     email: currentUser.value.email,
-    photoURL: currentUser.value.photoURL,
+    photoURL: currentUser.value.photoURL || null,
     uid: currentUser.value.uid
   }
 })
+
+const imageError = ref(false)
+
+const handleImageError = () => {
+  console.log('Image failed to load:', user.value?.photoURL)
+  imageError.value = true
+}
 
 const stats = ref({
   moviesWatched: 142,
@@ -67,13 +74,16 @@ const movies = ref([
         <div class="profile-image-section">
           <div class="profile-image-wrapper">
             <img
-              v-if="user.photoURL"
+              v-if="user.photoURL && !imageError"
+              :key="user.uid"
               :src="user.photoURL"
               :alt="user.displayName"
               class="profile-image"
+              crossorigin="anonymous"
+              @error="handleImageError"
             />
             <div v-else class="profile-image-placeholder">
-              {{ user.displayName[0].toUpperCase() }}
+              {{ user.displayName?.[0]?.toUpperCase() || 'U' }}
             </div>
           </div>
         </div>
