@@ -45,7 +45,8 @@ async function logout() {
         <h1 class="logo">Movie Tracker</h1>
         <nav>
           <RouterLink to="/">Home</RouterLink>
-          <RouterLink to="/about">About</RouterLink>
+          <RouterLink to="/form">Form</RouterLink>
+          <RouterLink to="/QR">QR Code</RouterLink>
           <RouterLink to="/profile">Profile</RouterLink>
 
           <div class="auth-section">

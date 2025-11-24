@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useCurrentUser } from 'vuefire'
-import { Upload, Film, BarChart3 } from 'lucide-vue-next'
+import { Film, BarChart3 } from 'lucide-vue-next'
 
 const currentUser = useCurrentUser()
 

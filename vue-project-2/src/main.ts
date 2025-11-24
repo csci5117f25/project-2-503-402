@@ -1,5 +1,3 @@
-import './assets/main.css'
-
 import { createApp } from 'vue'
 import { VueFire, VueFireAuth } from 'vuefire'
 import { initializeApp } from 'firebase/app'
@@ -19,7 +17,6 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig)
 
 const app = createApp(App)
-
 app.use(router)
 app.use(VueFire, {
   firebaseApp,
@@ -27,5 +24,4 @@ app.use(VueFire, {
     VueFireAuth()
   ]
 })
-
 app.mount('#app')

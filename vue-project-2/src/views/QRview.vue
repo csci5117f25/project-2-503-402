@@ -1,5 +1,5 @@
 <template>
 <div>
-  HOME PAGE TODO
+  QR CODE SCANNER TODO
 </div>
 </template>
