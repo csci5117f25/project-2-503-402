@@ -4,7 +4,6 @@ import HomeView from '@/views/HomeView.vue'
 import QRview from '@/views/QRview.vue'
 import FormView from '@/views/FormView.vue'
 
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -16,12 +15,12 @@ const router = createRouter({
     {
       path: '/form',
       name: 'form',
-      component: FormView
+      component: FormView,
     },
     {
       path: '/QR',
       name: 'QR',
-      component: QRview
+      component: QRview,
     },
     {
       path: '/profile',

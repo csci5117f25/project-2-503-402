@@ -1,5 +1,3 @@
 <template>
-  <div>
-    FORM TODO
-  </div>
+  <div>FORM TODO</div>
 </template>
