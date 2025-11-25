@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { addReview, genres, } from '@/movies';
+import { addReview, genres, movieCollection, } from '@/movies';
 import { Clapperboard, Clock, MessageCircle, Star } from 'lucide-vue-next';
 import { useCurrentUser } from 'vuefire';
 
-
-// TODO add genres to movie data
+// Handle tag selection
 function tagHandler(event: Event) {
   if(!event.target || !(event.target instanceof HTMLSpanElement))
     return;
   console.log(event.target.innerHTML)
+
+  // TODO allow genre additions
+  if(event.target.id === "add-genre")
+  {
+    // const
+    //   event.target.before()
+    return
+  }
 
   if(event.target.classList.contains('is-success')) {
     event.target.classList.remove('is-success');
@@ -70,6 +77,7 @@ async function handleSubmit(event: SubmitEvent) {
       <label class="label">Genres</label>
       <div id="genre-container" class="control tag-container" @click="tagHandler">
         <span v-for="genre in genres" :key="'genre-'+ genre" class="tag is-medium">{{ genre }}</span>
+        <span id="add-genre" class="tag is-medium is-info">Add a Genre</span>
       </div>
     </div>
 
@@ -92,6 +100,11 @@ async function handleSubmit(event: SubmitEvent) {
     </div>
 
     <button class="button" type="submit">Submit</button>
+
+    <br>
+    <div class="box">
+      {{ movieCollection }}
+    </div>
   </form>
 </template>
 

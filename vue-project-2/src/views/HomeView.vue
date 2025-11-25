@@ -1,8 +1,3 @@
-<script setup lang="ts">
-import { movieCollection } from '@/movies';
-
-</script>
-
 <template>
   <div class="home-page">
     <div class="home-inner">
