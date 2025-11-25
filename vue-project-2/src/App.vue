@@ -221,7 +221,7 @@ nav a:hover {
 .user-name {
   font-size: 1rem;
   font-weight: 600;
-  color: white;
+  color: Orange;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   max-width: 150px;
   white-space: nowrap;
