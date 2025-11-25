@@ -1,5 +1,10 @@
+<script setup lang="ts">
+import { movieCollection } from '@/movies';
+
+</script>
+
 <template>
 <div>
-  HOME PAGE TODO
+  {{  movieCollection }}
 </div>
 </template>
