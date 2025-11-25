@@ -10,7 +10,7 @@ const user = computed(() => {
   return {
     displayName: currentUser.value.displayName || 'User',
     email: currentUser.value.email,
-    uid: currentUser.value.uid
+    uid: currentUser.value.uid,
   }
 })
 
@@ -18,7 +18,7 @@ const stats = ref({
   moviesWatched: 142,
   totalHours: 284,
   favoriteGenre: 'Sci-Fi',
-  averageRating: 4.2
+  averageRating: 4.2,
 })
 
 const movies = ref([
@@ -27,29 +27,29 @@ const movies = ref([
     title: 'Inception',
     year: 2010,
     rating: 4.8,
-    poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&h=450&fit=crop'
+    poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&h=450&fit=crop',
   },
   {
     id: 2,
     title: 'The Matrix',
     year: 1999,
     rating: 4.7,
-    poster: 'https://images.unsplash.com/photo-1594908900066-3f47337549d8?w=300&h=450&fit=crop'
+    poster: 'https://images.unsplash.com/photo-1594908900066-3f47337549d8?w=300&h=450&fit=crop',
   },
   {
     id: 3,
     title: 'Interstellar',
     year: 2014,
     rating: 4.9,
-    poster: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=300&h=450&fit=crop'
+    poster: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=300&h=450&fit=crop',
   },
   {
     id: 4,
     title: 'Blade Runner 2049',
     year: 2017,
     rating: 4.5,
-    poster: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=300&h=450&fit=crop'
-  }
+    poster: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=300&h=450&fit=crop',
+  },
 ])
 </script>
 
@@ -109,11 +109,7 @@ const movies = ref([
       </div>
 
       <div class="movies-section">
-        <div
-          v-for="movie in movies"
-          :key="movie.id"
-          class="movie-card"
-        >
+        <div v-for="movie in movies" :key="movie.id" class="movie-card">
           <img :src="movie.poster" :alt="movie.title" class="movie-poster" />
           <div class="movie-info">
             <h3>{{ movie.title }}</h3>
@@ -288,7 +284,9 @@ const movies = ref([
   border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   cursor: pointer;
 }
 

@@ -8,8 +8,6 @@ const app = createApp(App)
 app.use(router)
 app.use(VueFire, {
   firebaseApp,
-  modules: [
-    VueFireAuth()
-  ]
+  modules: [VueFireAuth()],
 })
 app.mount('#app')
