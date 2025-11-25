@@ -34,7 +34,7 @@ interface movieDoc {
 // }
 
 export const movieCollectionRef = collection(db, 'movies');
-export const movieCollection = useCollection(movieCollectionRef, { idField: 'id' });
+export const movieCollection = useCollection(movieCollectionRef); // { idField: 'id' }
 
 export const devInfoRef = useDocument(doc(movieCollectionRef, 'dev-info'));
 export const genres = computed(() => Object.keys(devInfoRef.value?.genres))
@@ -61,7 +61,7 @@ export async function addReview(movieInfo: movieForm, userID: string) {
 
   // TODO update dev-info movie TOO
   // TODO add genres
-  const userMovieDoc = <DocumentReference<movieDoc>> doc(db, 'users', userID, 'reviews', movieInfo.title)
+  const userMovieDoc = <DocumentReference> doc(db, 'users', userID, 'reviews', movieInfo.title)
   await setDoc(userMovieDoc, {
       movieDocRef: movieDoc,
       rating: movieInfo.rating,

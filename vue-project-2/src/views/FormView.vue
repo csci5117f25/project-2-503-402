@@ -29,8 +29,9 @@ async function handleSubmit(event: SubmitEvent) {
 
   // Ensure a user is logged in
   const userID = useCurrentUser().value?.uid;
-  if(!userID)
-    return;
+  if(!userID) {
+    throw new Error("User needs to be logged in for form submission")
+  }
 
   // Get formdata and tags
   const formData = new FormData(<HTMLFormElement>event.target)
