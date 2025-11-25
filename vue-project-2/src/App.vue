@@ -2,14 +2,17 @@
 import { RouterLink, RouterView } from 'vue-router'
 import { useCurrentUser, useFirebaseAuth } from 'vuefire'
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
-import { provide, computed, ref } from 'vue'
+import { provide, computed } from 'vue'
 
 const user = useCurrentUser()
 const auth = useFirebaseAuth()
 const provider = new GoogleAuthProvider()
-const avatarError = ref(false)
 
-// Provide user data to child components (like Profile.vue)
+const getFirstName = (fullName: string | null) => {
+  if (!fullName) return 'User'
+  return fullName.split(' ')[0]
+}
+
 const userData = computed(() => {
   if (!user.value) return null
   return {
@@ -22,14 +25,12 @@ const userData = computed(() => {
 
 provide('userData', userData)
 
-const handleAvatarError = () => {
-  console.log('Avatar image failed to load:', user.value?.photoURL)
-  avatarError.value = true
-}
-
+provide('userData', userData)
 async function login() {
   try {
-    await signInWithPopup(auth, provider)
+    if (auth) {
+      await signInWithPopup(auth, provider)
+    }
   } catch (error) {
     console.error('Login failed:', error)
   }
@@ -37,7 +38,9 @@ async function login() {
 
 async function logout() {
   try {
-    await signOut(auth)
+    if (auth) {
+      await signOut(auth)
+    }
   } catch (error) {
     console.error('Logout failed:', error)
   }
@@ -66,7 +69,7 @@ async function logout() {
               Sign in with Google
             </button>
             <div v-else class="user-section">
-              <span class="user-name">{{ user.displayName || user.email }}</span>
+              <span class="user-name">{{ getFirstName(user.displayName) || user.email }}</span>
               <button @click="logout" class="auth-btn logout-btn">
                 Log out
               </button>
@@ -177,12 +180,6 @@ nav a:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-nav a.router-link-active {
-  background: rgba(255, 255, 255, 0.3);
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
 .auth-section {
   margin-left: 1rem;
   display: flex;
@@ -219,29 +216,6 @@ nav a.router-link-active {
   gap: 0.75rem;
   min-width: 0;
   flex-shrink: 1;
-}
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  object-fit: cover;
-}
-
-.user-avatar-placeholder {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: white;
 }
 
 .user-name {
@@ -304,12 +278,6 @@ main {
   .auth-btn {
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
-  }
-
-  .user-avatar,
-  .user-avatar-placeholder {
-    width: 32px;
-    height: 32px;
   }
 
   .user-name {
