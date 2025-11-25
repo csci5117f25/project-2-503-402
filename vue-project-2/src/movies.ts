@@ -13,6 +13,7 @@ import { computed } from 'vue';
 
 interface movieForm {
   title: string,
+  director: string,
   description?: string,
   genres: string[],
   rating: number,
@@ -21,6 +22,7 @@ interface movieForm {
 
 interface movieDoc {
   title: string,
+  director: string,
   description?: string,
   genres?: Record<string, number>,
   num_ratings: number | FieldValue,
@@ -51,6 +53,7 @@ export async function addReview(movieInfo: movieForm, userID: string) {
   const movieDoc = <DocumentReference<movieDoc>> doc(movieCollectionRef, movieInfo.title);
   await setDoc(movieDoc, {
       title: movieInfo.title,
+      director: movieInfo.director,
       description: movieInfo.description,
       genres: arrayUnion(...movieInfo.genres),
       num_ratings: increment(1),

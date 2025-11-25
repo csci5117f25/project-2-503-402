@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { addReview, genres, movieCollection, } from '@/movies';
-import { Clapperboard, Clock, MessageCircle, Star } from 'lucide-vue-next';
+import { CircleUser, Clapperboard, Clock, MessageCircle, Star } from 'lucide-vue-next';
 import { useCurrentUser } from 'vuefire';
 
 // Handle tag selection
@@ -41,6 +41,7 @@ async function handleSubmit(event: SubmitEvent) {
 
   addReview({
       title: <string>formData.get("title"),
+      director: <string>formData.get("director"),
       description: <string>formData.get("description"),
       genres: genres,
       rating: <number>(formData.get("rating") ? formData.get("rating"): 0),
@@ -65,9 +66,18 @@ async function handleSubmit(event: SubmitEvent) {
       </div>
 
       <br>
+      <label class="label">Director</label>
+      <div class="control has-icons-left">
+        <input class="input" name="release-year" required type="text">
+        <span class="icon is-small is-left">
+          <CircleUser />
+        </span>
+      </div>
+
+      <br>
       <label class="label">Release Year</label>
       <div class="control has-icons-left">
-        <input class="input" name="release-year" type="number">
+        <input class="input" name="release-year" type="number" min="1900" max="2100">
         <span class="icon is-small is-left">
           <Clock />
         </span>
