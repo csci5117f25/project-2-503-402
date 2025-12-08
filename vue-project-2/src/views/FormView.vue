@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { addReview, genres, movieCollection, } from '@/movies';
+import MovieSearch from '@/components/MovieSearch.vue';
+import { addReview, genres, } from '@/movies';
 import { CircleUser, Clapperboard, Clock, MessageCircle, Star } from 'lucide-vue-next';
 import { useCurrentUser } from 'vuefire';
 
@@ -54,6 +55,12 @@ async function handleSubmit(event: SubmitEvent) {
 </script>
 
 <template>
+
+  <div class="form-container">
+    <div class="box">
+      <MovieSearch @update:id="(id) => { console.log(id) }"></MovieSearch>
+    </div>
+  </div>
 
   <form class="form-container" @submit.prevent="handleSubmit">
     <div class="box">
@@ -111,17 +118,11 @@ async function handleSubmit(event: SubmitEvent) {
     </div>
 
     <button class="button" type="submit">Submit</button>
-
-    <br>
-    <div class="box">
-      {{ movieCollection }}
-    </div>
   </form>
 </template>
 
 
 <style scoped>
-@import "https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css";
 
 form.form-container {
   display: flex;

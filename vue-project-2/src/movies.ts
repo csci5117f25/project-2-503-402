@@ -10,6 +10,25 @@ import {
 import { useCollection, useDocument } from 'vuefire';
 import { db } from './firebase_conf';
 import { computed } from 'vue';
+import { TMDB } from '@lorenzopant/tmdb';
+
+
+// To any ill-willed people, do not steal this key!
+// its a free API - you wont cost us if you spam it.  Get your own key!
+export const tmdb = new TMDB(
+  'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkZDE3MzZlMzgyZmMxNjA1YzYyYmY2M2JkYWRjN2I2NiIsIm5iZiI6MTc2NTE0NTg2My4zLCJzdWIiOiI2OTM1ZmQwNzA3ODk4MGVhMjVkMWZmYjgiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.d3IXTp7U4zYFDr_FvdKZ3YNXh9BlW68LrVuHtwmoMOE',
+  {
+    language: 'en',
+    region: 'US'
+  }
+)
+
+console.log(tmdb)
+
+
+
+
+
 
 interface movieForm {
   title: string,
