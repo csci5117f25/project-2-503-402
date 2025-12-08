@@ -5,9 +5,13 @@ import { ref } from 'vue';
 import type { MovieResultItem } from '@lorenzopant/tmdb';
 
 defineProps({
-  title: {
+  id: {
+    type: Number,
+    default: undefined
+  },
+  inputTitle: {
     type: String,
-    default: 'Movie Search',
+    default: 'Movie Title',
   }
 })
 const emit = defineEmits([
@@ -48,15 +52,16 @@ function formatTitle(movie: MovieResultItem) {
 </script>
 
 <template>
-  <div class="dropdown is-fullwidth is-active">
-    <div class="dropdown-trigger">
-      <label class="label">{{ title }}</label>
+
+  <div class="dropdown is-active">
+    <div class="dropdown-trigger is-fullwidth">
+      <label class="label">{{ inputTitle }}</label>
       <div class="control is-fullwidth has-icons-left">
         <input v-model.trim="searchText" @input="searchBar" class="input" name="title" required type="text">
         <span class="icon is-small is-left"><Clapperboard /></span>
       </div>
     </div>
-    <div v-if="searchResults.length > 0" class="dropdown-menu is-fullwidth" id="dropdown-menu" role="menu">
+    <div v-if="searchResults.length > 0" class="dropdown-menu" id="dropdown-menu" role="menu">
       <div class="dropdown-content">
         <div
           v-for="movie in searchResults"
@@ -71,3 +76,15 @@ function formatTitle(movie: MovieResultItem) {
   </div>
 
 </template>
+
+<style scoped>
+
+.dropdown {
+  width: 100%;
+}
+
+.dropdown-trigger {
+  width: 100%;
+}
+
+</style>
