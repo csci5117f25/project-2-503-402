@@ -3,7 +3,6 @@ import {
   setDoc,
   getDoc,
   type FirestoreDataConverter,
-  Timestamp,
   query,
   where,
   documentId,
@@ -58,33 +57,36 @@ export interface UserReview {
 }
 
 // Convert firebase timestamps to js Date objects
-const fbMovieConverter: FirestoreDataConverter<MovieData> = {
+const MovieConverter: FirestoreDataConverter<MovieData> = {
   toFirestore(movie: MovieData) {
     return movie;
   },
   fromFirestore(snapshot, options): MovieData {
     const data = snapshot.data(options);
-    if(data.cached_at instanceof Timestamp)
-      data.cached_at.toDate();
-    return data as MovieData;
+    return {
+      ...data,
+      cached_at: data.cached_at.toDate()
+    } as MovieData;
   }
 }
 
 
+// TODO export this to functions?  Cannot allow all users to edit the cache
 // Get the movieData of a movie with id
 //  1. Return any valid cahced data from firebase
 //  2. Call tmdb api and update cahce
 export async function getMovie(id: number): Promise<MovieData> {
 
   // See if movieDoc cached, use that
-  const cacheDoc = await getDoc(doc(db, `movies/${id}`).withConverter(fbMovieConverter))
+  const cacheDoc = await getDoc(doc(db, `movies/${id}`).withConverter(MovieConverter))
   if(cacheDoc.exists()) {
     const data = cacheDoc.data();
     const today = new Date()
 
     // Check if cache date is less than 90 days ago
-    if(Math.abs(today.getTime() - data.cached_at.getTime()) < 90 * (1000 * 60 * 60 * 24))
+    if(Math.abs(today.getTime() - data.cached_at.getTime()) < 90 * (1000 * 60 * 60 * 24)) {
       return data;
+    }
   }
 
   // No cache, call TMDB api to get data.  Set only a few fields
@@ -112,15 +114,15 @@ export async function getMovie(id: number): Promise<MovieData> {
   return data;
 }
 
-// Get a list of documents specified by Id
-export async function getMovies(movieIds: number[]): Promise<MovieData[]> {
+
+// Get a list of cached movies specified by Id
+export async function getCachedMovies(movieIds: string[]): Promise<MovieData[]> {
   const q = query(
     collection(db, 'movies'), 
     where(documentId(), 'in', movieIds)
   );
-
   const movies = []
-  const movieDocs = await getDocs(q.withConverter(fbMovieConverter))
+  const movieDocs = await getDocs(q.withConverter(MovieConverter))
   for(const movieDoc of movieDocs.docs)
     movies.push(movieDoc.data())
   return movies

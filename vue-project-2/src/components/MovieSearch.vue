@@ -6,7 +6,7 @@ import type { MovieResultItem } from '@lorenzopant/tmdb';
 
 defineProps({
   id: {
-    type: Number,
+    type: String,
     default: undefined
   },
   inputTitle: {
