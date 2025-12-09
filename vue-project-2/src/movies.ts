@@ -134,6 +134,12 @@ export async function getCachedMovies(movieIds: string[]): Promise<MovieData[]> 
 //
 
 
+// TODO check if movie exists first?
+export async function addUserReview(userId: string, movieId: number, review: UserReview) {
+  await getMovie(movieId)
+  await setDoc(doc(db, `users/${userId}/reviews/${movieId}`), review)
+}
+
 // export async function getUserReviews(userId: string): Promise<UserReview[]> {
 
 // }

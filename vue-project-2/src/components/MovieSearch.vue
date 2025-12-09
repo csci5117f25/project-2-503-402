@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Clapperboard } from 'lucide-vue-next';
-import { tmdb } from '../movies';
+import { getMovie, tmdb } from '../movies';
 import { ref } from 'vue';
 import type { MovieResultItem } from '@lorenzopant/tmdb';
 
 defineProps({
   id: {
-    type: String,
+    type: Number,
     default: undefined
   },
   inputTitle: {
@@ -40,6 +40,7 @@ function searchBar() {
 function handleDropdown(id: number, title: string) {
   searchText.value = title;
   searchResults.value = [];
+  getMovie(id);               // do not wait, this will cache the movie
   emit('update:id', id)
 }
 

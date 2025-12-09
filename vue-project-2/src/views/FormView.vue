@@ -3,19 +3,20 @@ import MovieSearch from '@/components/MovieSearch.vue';
 import { Star } from 'lucide-vue-next';
 import { useCurrentUser } from 'vuefire';
 import { ref } from 'vue'
-import { getCachedMovies, getMovie } from '@/movies';
+import { addUserReview, getCachedMovies } from '@/movies';
 
 
 // Hold movie ID from movie search component
 const movieId = ref(undefined)
-// const movieUpdate = async (id: number) => {
-  
 
+// TODO enforce movie exists
+// const movieUpdate = async (id: number) => {
+//   await getMovie(id)
 
 // }
 
 // Submit handler
-async function handleSubmit() {
+async function handleSubmit(event: SubmitEvent) {
 
   // Ensure a user is logged in
   const userID = useCurrentUser().value?.uid;
@@ -27,26 +28,13 @@ async function handleSubmit() {
     throw new Error('Invalid movie selected')
   }
 
-  const movie = await getMovie(movieId.value);
-  console.log(movie)
-  console.log(movie.cached_at)
-
-  // // Get formdata and tags
-  // const formData = new FormData(<HTMLFormElement>event.target)
-  // const tagContainer = <HTMLDivElement>document.querySelector("#genre-container");
-  // const tagNodes = tagContainer.querySelectorAll("span.tag.is-success");
-  // const genres = Array.from(tagNodes).map(span => span.innerHTML).sort();
-
-  // addReview({
-  //     title: <string>formData.get("title"),
-  //     director: <string>formData.get("director"),
-  //     description: <string>formData.get("description"),
-  //     genres: genres,
-  //     rating: <number>(formData.get("rating") ? formData.get("rating"): 0),
-  //     comment: <string>formData.get("comment")
-  //   },
-  //   userID
-  // )
+  const formData = new FormData(<HTMLFormElement>event.target);
+  await addUserReview(userID, movieId.value, {
+    rating: parseInt(formData.get('rating') as string),
+    comment: formData.get('comment') as string
+  });
+  console.log('Successfully submitted!')
+  console.log(userID)
 }
 
 async function testFunc() {
