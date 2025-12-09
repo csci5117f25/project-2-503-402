@@ -3,6 +3,8 @@ import {
   setDoc,
   getDoc,
   type FirestoreDataConverter,
+  getDocs,
+  collection,
 } from 'firebase/firestore'
 import { db } from './firebase_conf';
 import { TMDB } from '@lorenzopant/tmdb';
@@ -29,8 +31,8 @@ export interface MovieData {
 }
 
 export interface UserReview {
-  rating: number,
-  comment: string,
+  rating: number | null,
+  comment: string | null,
   draft?: boolean
 }
 
@@ -85,7 +87,7 @@ const MovieConverter: FirestoreDataConverter<MovieData> = {
 // Get the movieData of a movie with id
 //  1. Return any valid cahced data from firebase
 //  2. Call tmdb api and update cahce
-export async function getMovie(id: number): Promise<MovieData> {
+export async function getMovie(id: number): Promise<MovieData | null> {
 
   // See if movieDoc cached, use that
   const cacheDoc = await getDoc(doc(db, `movies/${id}`).withConverter(MovieConverter))
@@ -100,32 +102,38 @@ export async function getMovie(id: number): Promise<MovieData> {
   }
 
   // No cache, call TMDB api to get data.  Set only a few fields
-  const result = await tmdb.movies.details({ movie_id: id})
-  const genres: Record<number, string> = {}
-  for(const item of result.genres) {
-    genres[item.id] = item.name
-  }
-  const data: MovieData = {
-    title: result.title,
-    tagline: result.tagline,
-    overview: result.overview,
-    release_date: result.release_date,
-    runtime: result.runtime,
-    budget: result.budget,
-    genres: genres,
-    poster_path: result.poster_path,
-    rating_avg: result.vote_average,
-    rating_count: result.vote_count,
-    cached_at: new Date()
-  }
+  // If the call fails, return null
+  try{
+    const result = await tmdb.movies.details({ movie_id: id})
+    const genres: Record<number, string> = {}
+    for(const item of result.genres) {
+      genres[item.id] = item.name
+    }
+    const data: MovieData = {
+      title: result.title,
+      tagline: result.tagline,
+      overview: result.overview,
+      release_date: result.release_date,
+      runtime: result.runtime,
+      budget: result.budget,
+      genres: genres,
+      poster_path: result.poster_path,
+      rating_avg: result.vote_average,
+      rating_count: result.vote_count,
+      cached_at: new Date()
+    }
 
-  // Cache it to our server
-  await setDoc(doc(db, `movies/${id}`), data)
-  return data;
+    // Cache it to our server
+    await setDoc(doc(db, `movies/${id}`), data)
+    return data;
+  }
+  catch {
+    return null;
+  }
 }
 
 // Get a list of movies
-export async function getMovies(movieIds: number[]): Promise<MovieData[]> {
+export async function getMovies(movieIds: number[]): Promise<Array<MovieData | null>> {
   const promises = movieIds.map((id) => { return getMovie(id)})
   return await Promise.all(promises)
 }
@@ -154,20 +162,64 @@ export async function addUserReview(userId: string, movieId: number, review: Use
   await setDoc(doc(db, `users/${userId}/reviews/${movieId}`), review)
 }
 
+// Get ONLY user reviews
+export async function getUserReview(userId: string, movieId: number): Promise<UserReview | null> {
+  const reviewDoc = await getDoc(doc(db, `users/${userId}/reviews/${movieId}`))
+  if(reviewDoc.exists()) 
+    return reviewDoc.data() as UserReview;
+  return null
+}
+export async function getUserReviews(userId: string, movieIds: number[]): Promise<Array<UserReview | null>> {
+  const promises = movieIds.map((id) => getUserReview(userId, id))
+  return await Promise.all(promises)
+}
+
+// Return ALL user reviews
+export async function getAllUserReviews(userId: string) {
+  const allDocs = await getDocs(collection(db, `users/${userId}/reviews`))
+  const userReviews: Record<string, UserReview> = {}
+  allDocs.forEach((userReview) => {
+    if(userReview.exists())
+      userReviews[userReview.id] = userReview.data() as UserReview;
+  })
+  return userReviews
+}
+
+
 // Get user review + movie data
-export async function getUserMovieReview(userId: string, movieId: number): Promise<UserMovieReview> {
+// Return null fields if userReview doesn't exist, return null if movie doesn't exist
+export async function getUserMovieReview(userId: string, movieId: number): Promise<UserMovieReview | null> {
   const [userReview, movieData] = await Promise.all([
     getDoc(doc(db, `users/${userId}/reviews/${movieId}`)),
     getMovie(movieId)
   ])
-  return {
-    ...(userReview.data() as UserReview),
-    ...movieData,
+
+  if(movieData) {
+    if(userReview.exists()) {
+      return {
+        ...(userReview.data() as UserReview),
+        ...movieData,
+      }
+    }
+    return {
+      rating: null,
+      comment: null,
+      ...movieData
+    }
   }
+  return null
+}
+export async function getUserMovieReviews(userId: string, movieIds: number[]): Promise<Array<UserMovieReview | null>> {
+  const promises = movieIds.map((id) => getUserMovieReview(userId, id))
+  return await Promise.all(promises)
 }
 
-// Get user movie reviews
-export async function getUserMovieReviews(userId: string, movieIds: number[]): Promise<UserMovieReview[]> {
-  const promises = movieIds.map((id) => { return getUserMovieReview(userId, id) })
-  return await Promise.all(promises)
+// Get ALL user reviews + movie data
+export async function getAllUserMovieReviews(userId: string) {
+  const userReviews = await getAllUserReviews(userId)
+  const movieIds: number[] = []
+  for(const id of Object.keys(userReviews)) {
+    movieIds.push(parseInt(id))
+  }
+  return await getUserMovieReviews(userId, movieIds)
 }
