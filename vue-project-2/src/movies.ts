@@ -5,6 +5,7 @@ import {
   type FirestoreDataConverter,
   getDocs,
   collection,
+  deleteDoc,
 } from 'firebase/firestore'
 import { db } from './firebase_conf';
 import { TMDB } from '@lorenzopant/tmdb';
@@ -141,7 +142,7 @@ export async function getMovies(movieIds: number[]): Promise<Array<MovieData | n
 // // Get a list of cached movies specified by Id
 // export async function getCachedMovies(movieIds: string[]): Promise<MovieData[]> {
 //   const q = query(
-//     collection(db, 'movies'), 
+//     collection(db, 'movies'),
 //     where(documentId(), 'in', movieIds)
 //   );
 //   const movies = []
@@ -157,15 +158,18 @@ export async function getMovies(movieIds: number[]): Promise<Array<MovieData | n
 //
 
 
-// Set user review for a movie id
+// Add / remove user review for a movie id
 export async function addUserReview(userId: string, movieId: number, review: UserReview) {
   await setDoc(doc(db, `users/${userId}/reviews/${movieId}`), review)
+}
+export async function removeUserReview(userId: string, movieId: number) {
+  await deleteDoc(doc(db, `users/${userId}/reviews/${movieId}`))
 }
 
 // Get ONLY user reviews
 export async function getUserReview(userId: string, movieId: number): Promise<UserReview | null> {
   const reviewDoc = await getDoc(doc(db, `users/${userId}/reviews/${movieId}`))
-  if(reviewDoc.exists()) 
+  if(reviewDoc.exists())
     return reviewDoc.data() as UserReview;
   return null
 }
