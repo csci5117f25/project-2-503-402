@@ -58,8 +58,8 @@ export const tmdb = new TMDB(
 // tmdb variables
 export const tmdbConfig = await tmdb.config.get()
 export const tmdbURL = tmdbConfig.images.base_url;
-export const tmdbImageURL = (path: string) => {
-  return tmdbURL + path;
+export const getMovieImageURL = (movie: MovieData) => {
+  return tmdbURL + movie.poster_path;
 }
 
 
