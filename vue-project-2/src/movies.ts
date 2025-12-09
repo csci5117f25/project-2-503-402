@@ -3,39 +3,16 @@ import {
   setDoc,
   getDoc,
   type FirestoreDataConverter,
-  query,
-  where,
-  documentId,
-  collection,
-  getDocs,
 } from 'firebase/firestore'
 import { db } from './firebase_conf';
 import { TMDB } from '@lorenzopant/tmdb';
 
 
-//
-//// TMDB setup, using a wrapper:
-//// https://github.com/lorenzopant/tmdb?tab=readme-ov-file
-//
-
-
-// To any ill-willed people, do not steal this key!
-// its a free API - you wont cost us if you spam it.  Get your own key!
-export const tmdb = new TMDB(
-  'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkZDE3MzZlMzgyZmMxNjA1YzYyYmY2M2JkYWRjN2I2NiIsIm5iZiI6MTc2NTE0NTg2My4zLCJzdWIiOiI2OTM1ZmQwNzA3ODk4MGVhMjVkMWZmYjgiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.d3IXTp7U4zYFDr_FvdKZ3YNXh9BlW68LrVuHtwmoMOE',
-  {
-    language: 'en',
-    region: 'US'
-  }
-)
-
-export const tmdbConfig = await tmdb.config.get()
-export const tmdbURL = tmdbConfig.images.base_url;
-
 
 //
-//// Firebase interactions
+////  Data types
 //
+
 
 export interface MovieData {
   title: string,
@@ -54,7 +31,40 @@ export interface MovieData {
 export interface UserReview {
   rating: number,
   comment: string,
+  draft?: boolean
 }
+
+export type UserMovieReview = UserReview | MovieData;
+
+
+//
+//// TMDB setup, using a wrapper:
+//// https://github.com/lorenzopant/tmdb?tab=readme-ov-file
+//
+
+
+// To any ill-willed people, do not steal this key!
+// its a free API - you wont cost us if you spam it.  Get your own key!
+export const tmdb = new TMDB(
+  'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkZDE3MzZlMzgyZmMxNjA1YzYyYmY2M2JkYWRjN2I2NiIsIm5iZiI6MTc2NTE0NTg2My4zLCJzdWIiOiI2OTM1ZmQwNzA3ODk4MGVhMjVkMWZmYjgiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.d3IXTp7U4zYFDr_FvdKZ3YNXh9BlW68LrVuHtwmoMOE',
+  {
+    language: 'en',
+    region: 'US'
+  }
+)
+
+// tmdb variables
+export const tmdbConfig = await tmdb.config.get()
+export const tmdbURL = tmdbConfig.images.base_url;
+export const tmdbImageURL = (path: string) => {
+  return tmdbURL + path;
+}
+
+
+//
+////  Movie interactions
+//
+
 
 // Convert firebase timestamps to js Date objects
 const MovieConverter: FirestoreDataConverter<MovieData> = {
@@ -71,7 +81,7 @@ const MovieConverter: FirestoreDataConverter<MovieData> = {
 }
 
 
-// TODO export this to functions?  Cannot allow all users to edit the cache
+// TODO export this to firebase functions?  Cannot allow all users to edit the cache
 // Get the movieData of a movie with id
 //  1. Return any valid cahced data from firebase
 //  2. Call tmdb api and update cahce
@@ -114,111 +124,50 @@ export async function getMovie(id: number): Promise<MovieData> {
   return data;
 }
 
-
-// Get a list of cached movies specified by Id
-export async function getCachedMovies(movieIds: string[]): Promise<MovieData[]> {
-  const q = query(
-    collection(db, 'movies'), 
-    where(documentId(), 'in', movieIds)
-  );
-  const movies = []
-  const movieDocs = await getDocs(q.withConverter(MovieConverter))
-  for(const movieDoc of movieDocs.docs)
-    movies.push(movieDoc.data())
-  return movies
+// Get a list of movies
+export async function getMovies(movieIds: number[]): Promise<MovieData[]> {
+  const promises = movieIds.map((id) => { return getMovie(id)})
+  return await Promise.all(promises)
 }
 
+// // Get a list of cached movies specified by Id
+// export async function getCachedMovies(movieIds: string[]): Promise<MovieData[]> {
+//   const q = query(
+//     collection(db, 'movies'), 
+//     where(documentId(), 'in', movieIds)
+//   );
+//   const movies = []
+//   const movieDocs = await getDocs(q.withConverter(MovieConverter))
+//   for(const movieDoc of movieDocs.docs)
+//     movies.push(movieDoc.data())
+//   return movies
+// }
+
 
 //
-//// User documents
+//// User interactions
 //
 
 
-// TODO check if movie exists first?
+// Set user review for a movie id
 export async function addUserReview(userId: string, movieId: number, review: UserReview) {
-  await getMovie(movieId)
   await setDoc(doc(db, `users/${userId}/reviews/${movieId}`), review)
 }
 
-// export async function getUserReviews(userId: string): Promise<UserReview[]> {
+// Get user review + movie data
+export async function getUserMovieReview(userId: string, movieId: number): Promise<UserMovieReview> {
+  const [userReview, movieData] = await Promise.all([
+    getDoc(doc(db, `users/${userId}/reviews/${movieId}`)),
+    getMovie(movieId)
+  ])
+  return {
+    ...(userReview.data() as UserReview),
+    ...movieData,
+  }
+}
 
-// }
-
-
-// export async function getUserMovies(userId: string): Promise<MovieData[]> {
-//   const userReviews = await getDocs(collection(db, `users/${userId}`))
-//   for(const docKey.id of userReviews)
-  
-// }
-
-
-
-
-
-
-
-// interface movieForm {
-//   title: string,
-//   director: string,
-//   description?: string,
-//   genres: string[],
-//   rating: number,
-//   comment?: string,
-// }
-
-// interface movieDoc {
-//   title: string,
-//   director: string,
-//   description?: string,
-//   genres?: Record<string, number>,
-//   num_ratings: number | FieldValue,
-//   sum_ratings: number | FieldValue,
-// }
-
-// // interface userMovieDoc {
-// //   movieDocRef: DocumentReference<movieDoc>,
-// //   rating: number,
-// //   comment: string
-// // }
-
-// export const movieCollectionRef = collection(db, 'movies');
-// export const movieCollection = useCollection(movieCollectionRef); // { idField: 'id' }
-
-// export const devInfoRef = useDocument(doc(movieCollectionRef, 'dev-info'));
-// export const genres = computed(() => Object.keys(devInfoRef.value?.genres))
-
-// export const userReviews = (userID: string) => useCollection(collection(db, 'users', userID))
-
-// // Add a user review to the system, 2 steps
-// //  1. Add / update movie info in collection 'movies'
-// //  2. Add / update review in colleciton 'user' for the logged in user
-// export async function addReview(movieInfo: movieForm, userID: string) {
-
-//   // TODO add logic for editing reviews
-//   // TODO add genre overlap logic
-//   const movieDoc = <DocumentReference<movieDoc>> doc(movieCollectionRef, movieInfo.title);
-//   await setDoc(movieDoc, {
-//       title: movieInfo.title,
-//       director: movieInfo.director,
-//       description: movieInfo.description,
-//       genres: arrayUnion(...movieInfo.genres),
-//       num_ratings: increment(1),
-//       sum_ratings: increment(movieInfo.rating)
-//     },
-//     { merge: true}
-//   )
-
-//   // TODO update dev-info movie TOO
-//   // TODO add genres
-//   const userMovieDoc = <DocumentReference> doc(db, 'users', userID, 'reviews', movieInfo.title)
-//   await setDoc(userMovieDoc, {
-//       movieDocRef: movieDoc,
-//       rating: movieInfo.rating,
-//       comment: movieInfo.comment
-//     },
-//     { merge: true }
-//   )
-//   // genre: Object.keys(movieInfo.genre).sort(),
-// }
-
-
+// Get user movie reviews
+export async function getUserMovieReviews(userId: string, movieIds: number[]): Promise<UserMovieReview[]> {
+  const promises = movieIds.map((id) => { return getUserMovieReview(userId, id) })
+  return await Promise.all(promises)
+}

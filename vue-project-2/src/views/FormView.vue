@@ -2,25 +2,32 @@
 import MovieSearch from '@/components/MovieSearch.vue';
 import { Star } from 'lucide-vue-next';
 import { useCurrentUser } from 'vuefire';
-import { ref } from 'vue'
-import { addUserReview, getCachedMovies } from '@/movies';
+import { computed, ref } from 'vue'
+import { addUserReview, getMovie } from '@/movies';
 
 
 // Hold movie ID from movie search component
 const movieId = ref(undefined)
+const currentUser = useCurrentUser();
+const userId = computed(() => currentUser.value?.uid ? currentUser.value.uid : null)
 
 // TODO enforce movie exists
-// const movieUpdate = async (id: number) => {
-//   await getMovie(id)
-
-// }
+async function movieUpdate (id: number) {
+  try{
+    await getMovie(id)
+    console.log(`Movie id: ${id}`)
+  }
+  catch(err) {
+    console.log(err)
+    alert('Invalid movie selected!')
+  }
+}
 
 // Submit handler
 async function handleSubmit(event: SubmitEvent) {
 
   // Ensure a user is logged in
-  const userID = useCurrentUser().value?.uid;
-  if(!userID) {
+  if(!userId.value) {
     throw new Error("User needs to be logged in for form submission")
   }
 
@@ -29,18 +36,12 @@ async function handleSubmit(event: SubmitEvent) {
   }
 
   const formData = new FormData(<HTMLFormElement>event.target);
-  await addUserReview(userID, movieId.value, {
+  await addUserReview(userId.value, movieId.value, {
     rating: parseInt(formData.get('rating') as string),
     comment: formData.get('comment') as string
   });
-  console.log('Successfully submitted!')
-  console.log(userID)
+  console.log(`Submitted user review, user ${userId.value}`)
 }
-
-async function testFunc() {
-  console.log(await getCachedMovies(['694', '8859']))
-}
-
 </script>
 
 <template>
@@ -48,7 +49,7 @@ async function testFunc() {
   <form class="form-container" @submit.prevent="handleSubmit">
     <div class="box">
 
-      <MovieSearch v-model:id="movieId"></MovieSearch>
+      <MovieSearch v-model:id="movieId" @update:id="movieUpdate($event)"></MovieSearch>
 
       <label class="label">Your Rating (1-10)</label>
       <div class="control has-icons-left">
@@ -67,7 +68,6 @@ async function testFunc() {
     <button class="button" type="submit">Submit</button>
   </form>
 
-  <button class="button" @click="testFunc()">Test</button>
 </template>
 
 
