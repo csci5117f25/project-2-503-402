@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Clapperboard } from 'lucide-vue-next';
 import { getMovie, tmdb } from '../movies';
-import { ref } from 'vue';
+import { ref, } from 'vue';
 import type { MovieResultItem } from '@lorenzopant/tmdb';
 
 defineProps({
@@ -23,6 +23,7 @@ const searchText = ref('');
 const searchResults = ref<MovieResultItem[]>([]);
 let searchTimeout: number | null = null;
 function searchBar() {
+  emit('update:id', null)  // if anything changes, invalidate ID
   if(searchTimeout)
     return;
 
@@ -54,11 +55,18 @@ function formatTitle(movie: MovieResultItem) {
 
 <template>
 
-  <div class="dropdown is-active">
+  <div ref="dropdown" class="dropdown is-active">
     <div class="dropdown-trigger is-fullwidth">
       <label class="label">{{ inputTitle }}</label>
       <div class="control is-fullwidth has-icons-left">
-        <input v-model.trim="searchText" @input="searchBar" class="input" name="title" required type="text">
+        <input
+          v-model.trim="searchText"
+          @input="searchBar"
+          class="input"
+          name="title"
+          required
+          type="text"
+        >
         <span class="icon is-small is-left"><Clapperboard /></span>
       </div>
     </div>

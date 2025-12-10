@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import { useCurrentUser, useFirebaseAuth } from 'vuefire'
+import { getCurrentUser, useCurrentUser, useFirebaseAuth } from 'vuefire'
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
 import { provide, computed } from 'vue'
+import router from './router'
 
 const user = useCurrentUser()
 const auth = useFirebaseAuth()
@@ -30,6 +31,9 @@ async function login() {
   try {
     if (auth) {
       await signInWithPopup(auth, provider)
+      if(!(await getCurrentUser()))
+        throw new Error('Invalid user')
+      router.push('/')
     }
   } catch (error) {
     console.error('Login failed:', error)
@@ -39,7 +43,8 @@ async function login() {
 async function logout() {
   try {
     if (auth) {
-      await signOut(auth)
+      await signOut(auth);
+      router.push('/login');
     }
   } catch (error) {
     console.error('Logout failed:', error)
