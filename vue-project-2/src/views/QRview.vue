@@ -119,6 +119,18 @@
 </template>
 
 <style scoped>
+  button {
+    white-space: nowrap;
+    border: none;
+    border-radius: 999px;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    background-color: #234c6a;
+    color: #ffffff;
+  }
+
 
 
   .qr-camera {
