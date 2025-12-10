@@ -39,7 +39,9 @@ const router = createRouter({
       path: '/report/:id',
       name: 'report',
       props: true,
-      component: ReportView,
+      component: ReportView
+    },
+    {
       path: '/login',
       name: 'login',
       component: LoginView
