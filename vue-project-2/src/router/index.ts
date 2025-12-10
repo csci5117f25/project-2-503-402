@@ -3,6 +3,7 @@ import ProfileView from '@/views/ProfileView.vue'
 import HomeView from '@/views/HomeView.vue'
 import QRview from '@/views/QRview.vue'
 import FormView from '@/views/FormView.vue'
+import ReportView from '@/views/ReportView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,6 +28,12 @@ const router = createRouter({
       name: 'profile',
       component: ProfileView,
     },
+    {
+      path: '/report/:id',
+      name: 'report',
+      props: true,
+      component: ReportView,
+    }
   ],
 })
 
