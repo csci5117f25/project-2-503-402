@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useCurrentUser } from 'vuefire'
+import { ref, computed, watch } from 'vue'
+import { useCurrentUser, useFirestore } from 'vuefire'
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
 import { Film, BarChart3 } from 'lucide-vue-next'
 
 const currentUser = useCurrentUser()
-
+const db = useFirestore()
 const user = computed(() => {
   if (!currentUser.value) return null
   return {
@@ -13,13 +14,14 @@ const user = computed(() => {
     uid: currentUser.value.uid,
   }
 })
-
 const stats = ref({
-  moviesWatched: 142,
-  totalHours: 284,
-  favoriteGenre: 'Sci-Fi',
-  averageRating: 4.2,
+  moviesWatched: 0,
+  totalHours: 0,
+  favoriteGenre: 'N/A',
+  averageRating: 0,
 })
+
+const isLoadingStats = ref(false)
 
 const movies = ref([
   {
@@ -51,8 +53,103 @@ const movies = ref([
     poster: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=300&h=450&fit=crop',
   },
 ])
-</script>
+// Calculate statistics when user changes
+watch(user, async (newUser) => {
+  if (newUser) {
+    await calculateStats(newUser.uid)
+  }
+}, { immediate: true })
 
+async function calculateStats(userId: string) {
+  isLoadingStats.value = true
+
+  try {
+    const reviewsRef = collection(db, 'users', userId, 'reviews')
+    const reviewsSnapshot = await getDocs(reviewsRef)
+
+    if (reviewsSnapshot.empty) {
+      stats.value = {
+        moviesWatched: 0,
+        totalHours: 0,
+        favoriteGenre: 'N/A',
+        averageRating: 0,
+      }
+      return
+    }
+
+    let totalMovies = 0
+    let totalMinutes = 0
+    const genreCounts: Record<string, number> = {}
+    let totalRating = 0
+    let ratingCount = 0
+
+    for (const reviewDoc of reviewsSnapshot.docs) {
+      const reviewData = reviewDoc.data()
+      const movieId = reviewDoc.id
+
+      // if we include drafts then add this into the if statement "&& reviewData.draft === false"
+      if (reviewData) {
+        totalMovies++
+
+        if (reviewData.rating !== undefined) {
+          totalRating += reviewData.rating
+          ratingCount++
+        }
+      }
+
+      if (reviewData) {
+        try {
+          const movieRef = doc(db, 'movies', movieId)
+          const movieSnap = await getDoc(movieRef)
+
+          if (movieSnap.exists()) {
+            const movieData = movieSnap.data()
+
+            if (movieData.runtime) {
+              totalMinutes += movieData.runtime
+            }
+
+            // if we uses drafts, add this if statement " && reviewData.draft === false"
+            if (movieData.genres) {
+              for (const genreId in movieData.genres) {
+                const genreName = movieData.genres[genreId]
+                genreCounts[genreName] = (genreCounts[genreName] || 0) + 1
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching movie ${movieId}:`, error)
+        }
+      }
+    }
+
+    // Calculate favorite genre
+    let favoriteGenre = 'N/A'
+    if (Object.keys(genreCounts).length > 0) {
+      const maxCount = Math.max(...Object.values(genreCounts))
+      const topGenres = Object.keys(genreCounts).filter(
+        genre => genreCounts[genre] === maxCount
+      )
+      favoriteGenre = topGenres[Math.floor(Math.random() * topGenres.length)]
+    }
+    const averageRating = ratingCount > 0
+      ? Math.round((totalRating / ratingCount) * 10) / 10
+      : 0
+    const totalHours = Math.round((totalMinutes / 60) * 100) / 100
+
+    stats.value = {
+      moviesWatched: totalMovies,
+      totalHours: totalHours,
+      favoriteGenre: favoriteGenre,
+      averageRating: averageRating,
+    }
+  } catch (error) {
+    console.error('Error calculating stats:', error)
+  } finally {
+    isLoadingStats.value = false
+  }
+}
+</script>
 <template>
   <div class="profile-container">
     <div v-if="!user" class="not-logged-in">
@@ -83,7 +180,11 @@ const movies = ref([
         <h2>Statistics Summary</h2>
       </div>
 
-      <div class="statistics-section">
+      <div v-if="isLoadingStats" class="loading-stats">
+        Loading your statistics...
+      </div>
+
+      <div v-else class="statistics-section">
         <div class="stat-card">
           <h3>{{ stats.moviesWatched }}</h3>
           <p>Movies Watched</p>
@@ -98,7 +199,7 @@ const movies = ref([
         </div>
         <div class="stat-card">
           <h3>{{ stats.averageRating }}</h3>
-          <p>Avg Rating</p>
+          <p>Avg Rating (out of 10)</p>
         </div>
       </div>
 
@@ -246,6 +347,13 @@ const movies = ref([
   margin: 0.5rem 0 0;
   opacity: 0.9;
   font-size: 0.95rem;
+}
+
+.loading-stats {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-size: 1.1rem;
 }
 
 .movies-section {
