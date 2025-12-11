@@ -3,7 +3,7 @@
 import { ref, computed, watch } from 'vue'
 import { useCurrentUser, useFirestore } from 'vuefire'
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
-import { Film, BarChart3 } from 'lucide-vue-next'
+import { Film, BarChart3, X } from 'lucide-vue-next'
 
 const currentUser = useCurrentUser()
 const db = useFirestore()
@@ -23,6 +23,9 @@ const stats = ref({
 })
 
 const isLoadingStats = ref(false)
+const showMoviesList = ref(false)
+const watchedMovies = ref<Array<{ id: string; title: string; year?: number; poster?: string }>>([])
+const isLoadingMovies = ref(false)
 
 const movies = ref([
   {
@@ -54,6 +57,7 @@ const movies = ref([
     poster: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=300&h=450&fit=crop',
   },
 ])
+
 // Calculate statistics when user changes
 watch(user, async (newUser) => {
   if (newUser) {
@@ -88,7 +92,6 @@ async function calculateStats(userId: string) {
       const reviewData = reviewDoc.data()
       const movieId = reviewDoc.id
 
-      // if we include drafts then add this into the if statement "&& reviewData.draft === false"
       if (reviewData) {
         totalMovies++
 
@@ -110,7 +113,6 @@ async function calculateStats(userId: string) {
               totalMinutes += movieData.runtime
             }
 
-            // if we use drafts, add this if statement " && reviewData.draft === false"
             if (movieData.genres) {
               for (const genreId in movieData.genres) {
                 const genreName = movieData.genres[genreId]
@@ -153,6 +155,56 @@ async function calculateStats(userId: string) {
     isLoadingStats.value = false
   }
 }
+
+async function fetchWatchedMovies() {
+  if (!user.value) return
+
+  isLoadingMovies.value = true
+  showMoviesList.value = true
+
+  try {
+    const reviewsRef = collection(db, 'users', user.value.uid, 'reviews')
+    const reviewsSnapshot = await getDocs(reviewsRef)
+
+    const moviesList: Array<{ id: string; title: string; year?: number; poster?: string }> = []
+
+    for (const reviewDoc of reviewsSnapshot.docs) {
+      const movieId = reviewDoc.id
+
+      try {
+        const movieRef = doc(db, 'movies', movieId)
+        const movieSnap = await getDoc(movieRef)
+
+        if (movieSnap.exists()) {
+          const movieData = movieSnap.data()
+          const posterUrl = movieData.poster_path
+            ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
+            : undefined
+          moviesList.push({
+            id: movieId,
+            title: movieData.title || 'Unknown Title',
+            year: movieData.release_date ? new Date(movieData.release_date).getFullYear() : undefined,
+            poster: posterUrl
+          })
+        }
+      } catch (error) {
+        console.error(`Error fetching movie ${movieId}:`, error)
+      }
+    }
+
+    // Sort by title
+    moviesList.sort((a, b) => a.title.localeCompare(b.title))
+    watchedMovies.value = moviesList
+  } catch (error) {
+    console.error('Error fetching watched movies:', error)
+  } finally {
+    isLoadingMovies.value = false
+  }
+}
+
+function closeMoviesList() {
+  showMoviesList.value = false
+}
 </script>
 
 <template>
@@ -190,9 +242,10 @@ async function calculateStats(userId: string) {
       </div>
 
       <div v-else class="statistics-section">
-        <div class="stat-card">
+        <div class="stat-card clickable" @click="fetchWatchedMovies">
           <h3>{{ stats.moviesWatched }}</h3>
           <p>Movies Watched</p>
+          <div class="click-hint">Click to view list</div>
         </div>
         <div class="stat-card">
           <h3>{{ stats.totalHours }}</h3>
@@ -205,6 +258,40 @@ async function calculateStats(userId: string) {
         <div class="stat-card">
           <h3>{{ stats.averageRating }}</h3>
           <p>Avg Rating (out of 10)</p>
+        </div>
+      </div>
+
+      <div v-if="showMoviesList" class="modal-overlay" @click.self="closeMoviesList">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Movies You've Watched</h2>
+            <button class="close-button" @click="closeMoviesList">
+              <X :size="24" />
+            </button>
+          </div>
+
+          <div v-if="isLoadingMovies" class="modal-loading">
+            <div class="loading-spinner"></div>
+            <p>Loading your movies...</p>
+          </div>
+
+          <div v-else class="movies-list">
+            <div v-if="watchedMovies.length === 0" class="no-movies">
+              No movies found
+            </div>
+            <div v-else class="movie-item" v-for="movie in watchedMovies" :key="movie.id">
+              <div class="movie-item-poster">
+                <img v-if="movie.poster" :src="movie.poster" :alt="movie.title" />
+                <div v-else class="movie-item-placeholder">
+                  <Film :size="24" />
+                </div>
+              </div>
+              <div class="movie-item-info">
+                <h3>{{ movie.title }}</h3>
+                <p v-if="movie.year">{{ movie.year }}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -335,11 +422,23 @@ async function calculateStats(userId: string) {
   color: white;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
 }
 
 .stat-card:hover {
   transform: translateY(-4px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.clickable {
+  cursor: pointer;
+}
+
+.stat-card.clickable:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
 }
 
 .stat-card h3 {
@@ -354,11 +453,197 @@ async function calculateStats(userId: string) {
   font-size: 0.95rem;
 }
 
+.click-hint {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: white;
+}
+
+.stat-card.clickable:hover .click-hint {
+  opacity: 0.8;
+}
+
 .loading-stats {
   text-align: center;
   padding: 2rem;
   color: #6b7280;
   font-size: 1.1rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(102, 126, 234, 0.2);
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 1.5rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.modal-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+  color: #6b7280;
+}
+
+.movies-list {
+  overflow-y: auto;
+  padding: 1rem;
+  max-height: calc(80vh - 80px);
+}
+
+.no-movies {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.movie-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.movie-item:hover {
+  background: #f9fafb;
+}
+
+.movie-item-poster {
+  width: 60px;
+  height: 90px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.movie-item-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.movie-item-placeholder {
+  color: #9ca3af;
+}
+
+.movie-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.movie-item-info h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.movie-item-info p {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: #6b7280;
 }
 
 .movies-section {
