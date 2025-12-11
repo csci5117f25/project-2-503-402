@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useCurrentUser, useFirestore } from 'vuefire'
@@ -109,7 +110,7 @@ async function calculateStats(userId: string) {
               totalMinutes += movieData.runtime
             }
 
-            // if we uses drafts, add this if statement " && reviewData.draft === false"
+            // if we use drafts, add this if statement " && reviewData.draft === false"
             if (movieData.genres) {
               for (const genreId in movieData.genres) {
                 const genreName = movieData.genres[genreId]
@@ -124,13 +125,16 @@ async function calculateStats(userId: string) {
     }
 
     // Calculate favorite genre
-    let favoriteGenre = 'N/A'
+    let favoriteGenre: string = 'N/A'
     if (Object.keys(genreCounts).length > 0) {
       const maxCount = Math.max(...Object.values(genreCounts))
       const topGenres = Object.keys(genreCounts).filter(
         genre => genreCounts[genre] === maxCount
       )
-      favoriteGenre = topGenres[Math.floor(Math.random() * topGenres.length)]
+      const selectedGenre = topGenres[Math.floor(Math.random() * topGenres.length)]
+      if (selectedGenre !== undefined) {
+        favoriteGenre = selectedGenre
+      }
     }
     const averageRating = ratingCount > 0
       ? Math.round((totalRating / ratingCount) * 10) / 10
@@ -150,6 +154,7 @@ async function calculateStats(userId: string) {
   }
 }
 </script>
+
 <template>
   <div class="profile-container">
     <div v-if="!user" class="not-logged-in">
@@ -404,5 +409,24 @@ async function calculateStats(userId: string) {
   margin-top: 0.5rem;
   color: #f59e0b;
   font-weight: 600;
+}
+
+.not-logged-in {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.not-logged-in .icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.not-logged-in h2 {
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.not-logged-in p {
+  color: #6b7280;
 }
 </style>
