@@ -30,14 +30,16 @@ const showMoviesList = ref(false)
 const watchedMovies = ref<Array<{ id: string; title: string; year?: number; poster?: string }>>([])
 const isLoadingMovies = ref(false)
 
-const draftReviews = ref<Array<{
-  id: string
-  title: string
-  year?: number
-  poster?: string
-  rating?: number
-  comment?: string
-}>>([])
+const draftReviews = ref<
+  Array<{
+    id: string
+    title: string
+    year?: number
+    poster?: string
+    rating?: number
+    comment?: string
+  }>
+>([])
 const isLoadingDrafts = ref(false)
 
 function navigateToDraft(movieId: string, rating?: number, comment?: string) {
@@ -46,18 +48,22 @@ function navigateToDraft(movieId: string, rating?: number, comment?: string) {
     query: {
       movieId: movieId,
       rating: rating?.toString() || '',
-      comment: comment || ''
-    }
+      comment: comment || '',
+    },
   })
 }
 
 // Calculate statistics when user changes
-watch(user, async (newUser) => {
-  if (newUser) {
-    await calculateStats(newUser.uid)
-    await fetchDraftReviews(newUser.uid)
-  }
-}, { immediate: true })
+watch(
+  user,
+  async (newUser) => {
+    if (newUser) {
+      await calculateStats(newUser.uid)
+      await fetchDraftReviews(newUser.uid)
+    }
+  },
+  { immediate: true },
+)
 
 async function calculateStats(userId: string) {
   isLoadingStats.value = true
@@ -123,17 +129,13 @@ async function calculateStats(userId: string) {
     let favoriteGenre: string = 'N/A'
     if (Object.keys(genreCounts).length > 0) {
       const maxCount = Math.max(...Object.values(genreCounts))
-      const topGenres = Object.keys(genreCounts).filter(
-        genre => genreCounts[genre] === maxCount
-      )
+      const topGenres = Object.keys(genreCounts).filter((genre) => genreCounts[genre] === maxCount)
       const selectedGenre = topGenres[Math.floor(Math.random() * topGenres.length)]
       if (selectedGenre !== undefined) {
         favoriteGenre = selectedGenre
       }
     }
-    const averageRating = ratingCount > 0
-      ? Math.round((totalRating / ratingCount) * 10) / 10
-      : 0
+    const averageRating = ratingCount > 0 ? Math.round((totalRating / ratingCount) * 10) / 10 : 0
     const totalHours = Math.round((totalMinutes / 60) * 100) / 100
 
     stats.value = {
@@ -190,7 +192,7 @@ async function fetchDraftReviews(userId: string) {
               year: year,
               poster: posterUrl,
               rating: reviewData.rating,
-              comment: reviewData.comment
+              comment: reviewData.comment,
             })
           }
         } catch (error) {
@@ -239,8 +241,10 @@ async function fetchWatchedMovies() {
             moviesList.push({
               id: movieId,
               title: movieData.title || 'Unknown Title',
-              year: movieData.release_date ? new Date(movieData.release_date).getFullYear() : undefined,
-              poster: posterUrl
+              year: movieData.release_date
+                ? new Date(movieData.release_date).getFullYear()
+                : undefined,
+              poster: posterUrl,
             })
           }
         } catch (error) {
@@ -294,9 +298,7 @@ function closeMoviesList() {
         <h2>Statistics Summary</h2>
       </div>
 
-      <div v-if="isLoadingStats" class="loading-stats">
-        Loading your statistics...
-      </div>
+      <div v-if="isLoadingStats" class="loading-stats">Loading your statistics...</div>
 
       <div v-else class="statistics-section">
         <div class="stat-card clickable" @click="fetchWatchedMovies">
@@ -333,9 +335,7 @@ function closeMoviesList() {
           </div>
 
           <div v-else class="movies-list">
-            <div v-if="watchedMovies.length === 0" class="no-movies">
-              No movies found
-            </div>
+            <div v-if="watchedMovies.length === 0" class="no-movies">No movies found</div>
             <div v-else class="movie-item" v-for="movie in watchedMovies" :key="movie.id">
               <div class="movie-item-poster">
                 <img v-if="movie.poster" :src="movie.poster" :alt="movie.title" />
@@ -358,9 +358,7 @@ function closeMoviesList() {
         <h2>Review Draft Collection</h2>
       </div>
 
-      <div v-if="isLoadingDrafts" class="loading-stats">
-        Loading your draft reviews...
-      </div>
+      <div v-if="isLoadingDrafts" class="loading-stats">Loading your draft reviews...</div>
 
       <div v-else-if="draftReviews.length === 0" class="no-drafts">
         <p>No draft reviews found</p>
@@ -373,21 +371,14 @@ function closeMoviesList() {
           class="movie-card"
           @click="navigateToDraft(movie.id, movie.rating, movie.comment)"
         >
-          <img
-            v-if="movie.poster"
-            :src="movie.poster"
-            :alt="movie.title"
-            class="movie-poster"
-          />
+          <img v-if="movie.poster" :src="movie.poster" :alt="movie.title" class="movie-poster" />
           <div v-else class="movie-poster-placeholder">
             <Film :size="48" />
           </div>
           <div class="movie-info">
             <h3>{{ movie.title }}</h3>
             <p v-if="movie.year" class="movie-year">{{ movie.year }}</p>
-            <div v-if="movie.rating !== undefined" class="movie-rating">
-              ⭐ {{ movie.rating }}
-            </div>
+            <div v-if="movie.rating !== undefined" class="movie-rating">⭐ {{ movie.rating }}</div>
             <p v-if="movie.comment" class="movie-comment">{{ movie.comment }}</p>
           </div>
         </div>

@@ -7,7 +7,6 @@ import ReportView from '@/views/ReportView.vue'
 import { getCurrentUser } from 'vuefire'
 import LoginView from '@/views/LoginView.vue'
 
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -15,51 +14,50 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/form',
       name: 'form',
       component: FormView,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/QR',
       name: 'QR',
       component: QRview,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/profile',
       name: 'profile',
       component: ProfileView,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/report/:id',
       name: 'report',
       props: true,
-      component: ReportView
+      component: ReportView,
     },
     {
       path: '/login',
       name: 'login',
-      component: LoginView
-    }
+      component: LoginView,
+    },
   ],
 })
-
 
 // Verify user login before loading
 router.beforeEach(async (to) => {
   if (to.meta.requiresAuth) {
     const currentUser = await getCurrentUser()
-    if(!currentUser) {
+    if (!currentUser) {
       return {
         path: '/login',
         query: {
-          redirect: to.fullPath
-        }
+          redirect: to.fullPath,
+        },
       }
     }
   }
