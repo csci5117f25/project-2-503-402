@@ -8,31 +8,76 @@
         <div class="cards-list">
           <article
             v-for="(review, index) in reviews"
-            :key="review.id"
+            :key="review.movieId"
             :ref="(el) => (cardRefs[index] = el)"
             class="review-card"
           >
-            <div class="card-inner">
-              <div class="poster-wrapper">
-                <img :src="review.posterUrl" :alt="`${review.title} poster`" class="poster-img" />
+            <div class="card-grid">
+              <!-- Poster (squarish) -->
+              <div class="poster-sq">
+                <img
+                  v-if="review.posterUrl"
+                  :src="review.posterUrl"
+                  :alt="`${review.title} poster`"
+                  class="poster-img"
+                  loading="lazy"
+                />
+                <div v-else class="poster-fallback">No poster</div>
               </div>
 
-              <div class="card-content">
-                <header class="review-header">
-                  <div>
+              <!-- Main content -->
+              <div class="card-main">
+                <header class="top-row">
+                  <div class="title-block">
                     <h3 class="movie-title">{{ review.title }}</h3>
-                    <div class="meta-row">
-                      <span class="rating-chip">⭐ {{ review.rating.toFixed(1) }}/10</span>
-                      <span class="meta-item">{{ review.date }}</span>
-                      <span class="meta-item">Where: {{ review.watchedWhere }}</span>
+                    <p class="movie-meta">
+                      <span class="meta-pill">{{ formatDate(review.release_date) }}</span>
+                      <span v-if="review.runtime" class="meta-pill">{{ review.runtime }} min</span>
+                    </p>
+                  </div>
+
+                  <!-- Global rating badge -->
+                  <div class="global-rating">
+                    <div class="global-stars">
+                      <span class="star">★</span>
+                      <span class="global-score">{{ formatOneDecimal(review.rating_avg) }}</span>
+                      <span class="global-outof">/10</span>
+                    </div>
+                    <div class="global-count">
+                      {{ formatCount(review.rating_count) }} ratings
                     </div>
                   </div>
                 </header>
 
-                <p class="review-body">{{ review.commentary }}</p>
+                <!-- User rating + thoughts -->
+                <div class="user-row">
+                  <div class="user-rating">
+                    <span class="label">You rated</span>
+                    <span class="chip">
+                      ⭐ {{ formatOneDecimal(review.user_rating) }}/10
+                    </span>
+                  </div>
 
-                <footer class="tag-row">
-                  <span v-for="tag in review.tags" :key="tag" class="tag-pill">{{ tag }}</span>
+                  <div class="user-thoughts">
+                    <span class="label">Your thoughts</span>
+                    <p class="thoughts-text">
+                      {{ review.user_thoughts || '—' }}
+                    </p>
+                  </div>
+                </div>
+
+                <footer class="bottom-row">
+                  <div class="kpi">
+                    <span class="kpi-label">TMDB</span>
+                    <span class="kpi-value">
+                      {{ formatOneDecimal(review.rating_avg) }} avg · {{ formatCount(review.rating_count) }} votes
+                    </span>
+                  </div>
+
+                  <!-- Optional: keep your tags if you want (safe to remove) -->
+                  <div v-if="review.tags?.length" class="tag-row">
+                    <span v-for="tag in review.tags" :key="tag" class="tag-pill">{{ tag }}</span>
+                  </div>
                 </footer>
               </div>
             </div>
@@ -47,14 +92,14 @@
         <div class="sidebar-list">
           <button
             v-for="(review, index) in reviews"
-            :key="review.id"
+            :key="review.movieId"
             :ref="(el) => (sidebarItemRefs[index] = el)"
             class="sidebar-item"
-            :class="{ active: review.id === activeReviewId }"
-            @click="scrollToReview(review.id)"
+            :class="{ active: review.movieId === activeReviewId }"
+            @click="scrollToReview(review.movieId)"
           >
             <span class="sidebar-movie-title">{{ review.title }}</span>
-            <span class="sidebar-rating">{{ review.rating.toFixed(1) }}/10</span>
+            <span class="sidebar-rating">{{ formatOneDecimal(review.user_rating) }}/10</span>
           </button>
         </div>
       </aside>
@@ -62,98 +107,107 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
-const reviews = ref([
+type ReviewCard = {
+  // Identifier (use TMDB id here — this will match your Firestore doc id later)
+  movieId: number
+
+  // From API (cached MovieData)
+  title: string
+  release_date: string
+  runtime: number | null
+  poster_path: string | null
+  rating_avg: number
+  rating_count: number
+
+  // From form / user review
+  user_rating: number | null
+  user_thoughts: string | null
+
+  // optional for now
+  tags?: string[]
+  // convenience for mock UI (later we’ll derive from poster_path + tmdbImageURL)
+  posterUrl?: string | null
+}
+
+const reviews = ref<ReviewCard[]>([
   {
-    id: 'dune2',
+    movieId: 693134, // example TMDB id (Dune: Part Two)
     title: 'Dune: Part Two',
-    rating: 9.1,
-    date: 'Nov 12, 2025',
-    watchedWhere: 'Theater',
-    commentary:
-      'Huge, dense, and surprisingly emotional. Sound design + visuals are insane. Paul’s arc feels way darker than in Part One.',
-    tags: ['Sci-Fi', 'Epic', 'Rewatch-worthy'],
+    release_date: '2024-02-27',
+    runtime: 166,
+    poster_path: '/somepath.jpg',
+    rating_avg: 8.6,
+    rating_count: 7200,
+    user_rating: 9.1,
+    user_thoughts:
+      'Huge, dense, and surprisingly emotional. Sound design + visuals are insane.',
+    tags: ['Sci-Fi', 'Epic'],
     posterUrl: 'https://i.ebayimg.com/images/g/epwAAOSwmutlsW7j/s-l1200.jpg',
   },
   {
-    id: 'spiderverse2',
+    movieId: 569094,
     title: 'Spider-Man: Across the Spider-Verse',
-    rating: 9.5,
-    date: 'Oct 03, 2025',
-    watchedWhere: 'Home',
-    commentary:
-      'Every frame looks like a poster. Loved how the animation style changes with each universe. Ending cliffhanger still hurts.',
-    tags: ['Animation', 'Superhero', 'Visual Feast'],
+    release_date: '2023-05-31',
+    runtime: 140,
+    poster_path: '/somepath.jpg',
+    rating_avg: 8.7,
+    rating_count: 9800,
+    user_rating: 9.5,
+    user_thoughts:
+      'Every frame looks like a poster. Loved how the animation style changes with each universe.',
+    tags: ['Animation', 'Superhero'],
     posterUrl: 'https://m.media-amazon.com/images/I/71q1TyEFjpL.jpg',
-  },
-  {
-    id: 'oppenheimer',
-    title: 'Oppenheimer',
-    rating: 8.8,
-    date: 'Sep 15, 2025',
-    watchedWhere: 'IMAX',
-    commentary:
-      'Very talky but never boring. Soundtrack is relentless and the final hour feels like a courtroom thriller more than a biopic.',
-    tags: ['Drama', 'History', 'Long but worth it'],
-    posterUrl: 'https://m.media-amazon.com/images/I/71qu4p5bnDL._AC_UF894,1000_QL80_.jpg',
-  },
-  {
-    id: 'pastlives',
-    title: 'Past Lives',
-    rating: 9.0,
-    date: 'Aug 28, 2025',
-    watchedWhere: 'Home',
-    commentary:
-      'Quiet, slow, and devastating. Feels like remembering a dream you almost forgot. Minimal plot, maximum feelings.',
-    tags: ['Romance', 'Indie', 'Slow Burn'],
-    posterUrl: 'https://m.media-amazon.com/images/I/512c8UEHX6L._AC_UF1000,1000_QL80_.jpg',
-  },
-  {
-    id: 'barbie',
-    title: 'Barbie',
-    rating: 8.2,
-    date: 'Jul 10, 2025',
-    watchedWhere: 'Theater',
-    commentary:
-      'Way funnier and stranger than I expected. Production design is ridiculous. Ken absolutely steals the third act.',
-    tags: ['Comedy', 'Meta', 'Vibes'],
-    posterUrl: 'https://i.ebayimg.com/images/g/2NUAAOSw0LVkligx/s-l1200.jpg',
   },
 ])
 
-const cardRefs = ref([])
-const sidebarItemRefs = ref([])
-const activeReviewId = ref(reviews.value[0]?.id ?? null)
+const cardRefs = ref<HTMLElement[]>([])
+const sidebarItemRefs = ref<HTMLElement[]>([])
+const activeReviewId = ref<number | null>(reviews.value[0]?.movieId ?? null)
 const navOffset = ref(90)
 const isJumping = ref(false)
 
-const measureNavHeight = () => {
-  const nav =
-    document.querySelector('nav') ||
-    document.querySelector('header') ||
-    document.querySelector('.navbar')
-
-  if (nav) {
-    navOffset.value = nav.getBoundingClientRect().height
-  }
+function formatOneDecimal(n: number | null | undefined) {
+  if (n === null || n === undefined || Number.isNaN(n)) return '—'
+  return n.toFixed(1)
 }
 
-const scrollToReview = (id) => {
-  const index = reviews.value.findIndex((r) => r.id === id)
+function formatCount(n: number | null | undefined) {
+  if (n === null || n === undefined || Number.isNaN(n)) return '0'
+  return Intl.NumberFormat('en-US').format(n)
+}
+
+function formatDate(iso: string) {
+  // expects YYYY-MM-DD (TMDB style)
+  if (!iso) return 'Unknown'
+  const d = new Date(iso + 'T00:00:00')
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+const measureNavHeight = () => {
+  // Prefer header first (your header includes logo + nav)
+  const nav =
+    document.querySelector('header') ||
+    document.querySelector('nav') ||
+    document.querySelector('.navbar')
+
+  if (nav) navOffset.value = nav.getBoundingClientRect().height
+}
+
+const scrollToReview = (movieId: number) => {
+  const index = reviews.value.findIndex((r) => r.movieId === movieId)
   if (index === -1) return
 
   const el = cardRefs.value[index]
   if (!el || !el.scrollIntoView) return
 
-  activeReviewId.value = id
+  activeReviewId.value = movieId
   isJumping.value = true
 
-  el.scrollIntoView({
-    behavior: 'smooth',
-    block: 'start',
-  })
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   setTimeout(() => {
     isJumping.value = false
@@ -171,32 +225,31 @@ const handleScroll = () => {
   cardRefs.value.forEach((el, index) => {
     if (!el) return
     const rect = el.getBoundingClientRect()
-    const cardTopRelative = rect.top - offset
-    const dist = Math.abs(cardTopRelative)
+    const dist = Math.abs(rect.top - offset)
 
     if (dist < minDist) {
       minDist = dist
       closestIndex = index
-      closestId = reviews.value[index].id
+      closestId = reviews.value[index].movieId
     }
   })
 
-  if (closestIndex !== -1) {
+  if (closestIndex !== -1 && closestId !== null) {
     activeReviewId.value = closestId
     const sideEl = sidebarItemRefs.value[closestIndex]
-    if (sideEl && sideEl.scrollIntoView) {
-      sideEl.scrollIntoView({ block: 'nearest' })
-    }
+    sideEl?.scrollIntoView?.({ block: 'nearest' })
   }
 }
 
 onMounted(() => {
   measureNavHeight()
   window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('resize', measureNavHeight, { passive: true })
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', measureNavHeight)
 })
 </script>
 
@@ -236,106 +289,221 @@ onBeforeUnmount(() => {
 .cards-list {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.1rem;
 }
 
+/* --- redesigned card --- */
 .review-card {
   background: #ffffff;
-  border-radius: 1.2rem;
-  padding: 0.9rem 1.1rem;
-  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
+  border-radius: 1.1rem;
+  padding: 0.9rem;
   border: 1px solid rgba(148, 163, 184, 0.25);
-  max-width: 880px;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
+  max-width: 920px;
   margin-right: auto;
-  min-height: 190px;
   overflow: hidden;
   scroll-margin-top: 200px;
 }
 
-.card-inner {
-  display: flex;
-  gap: 1rem;
+.card-grid {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 0.95rem;
+  align-items: start;
 }
 
-.poster-wrapper {
-  flex: 0 0 150px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* squarish poster */
+.poster-sq {
+  width: 132px;
+  height: 132px;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(236, 72, 153, 0.10));
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+  display: grid;
+  place-items: center;
 }
 
 .poster-img {
-  width: 150px;
-  height: 210px;
-  border-radius: 0.9rem;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.4);
 }
 
-.card-content {
-  flex: 1 1 auto;
+.poster-fallback {
+  font-size: 0.8rem;
+  color: #4b5563;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.card-main {
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
 }
 
-.review-header {
+.top-row {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.4rem;
+  align-items: flex-start;
+}
+
+.title-block {
+  min-width: 0;
 }
 
 .movie-title {
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.movie-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.meta-pill {
+  font-size: 0.78rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.15);
+  color: #374151;
+}
+
+.global-rating {
+  flex: 0 0 auto;
+  text-align: right;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.9rem;
+  background: rgba(17, 24, 39, 0.03);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.global-stars {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.2rem;
+}
+
+.star {
+  font-size: 0.95rem;
+}
+
+.global-score {
+  font-size: 1.05rem;
+  font-weight: 800;
   color: #111827;
 }
 
-.meta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
+.global-outof {
   font-size: 0.8rem;
   color: #6b7280;
+  font-weight: 600;
 }
 
-.rating-chip {
-  padding: 0.15rem 0.55rem;
+.global-count {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.user-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.label {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+  font-weight: 700;
+}
+
+.user-rating .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.22rem 0.6rem;
   border-radius: 999px;
   background: linear-gradient(135deg, #f97316, #facc15);
   color: #111827;
-  font-weight: 600;
+  font-weight: 800;
+  font-size: 0.9rem;
 }
 
-.meta-item {
-  padding: 0.15rem 0.5rem;
+.thoughts-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: #374151;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bottom-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding-top: 0.25rem;
+  border-top: 1px dashed rgba(148, 163, 184, 0.35);
+}
+
+.kpi {
+  font-size: 0.82rem;
+  color: #374151;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.kpi-label {
+  font-weight: 800;
+  padding: 0.12rem 0.45rem;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.15);
+  background: rgba(79, 70, 229, 0.10);
+  color: #4338ca;
 }
 
-.review-body {
-  margin: 0.35rem 0 0.7rem;
-  font-size: 0.96rem;
-  line-height: 1.5;
+.kpi-value {
+  font-weight: 600;
   color: #374151;
 }
 
 .tag-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: auto;
+  gap: 0.35rem;
 }
 
 .tag-pill {
-  font-size: 0.75rem;
-  padding: 0.15rem 0.6rem;
+  font-size: 0.73rem;
+  padding: 0.15rem 0.55rem;
   border-radius: 999px;
   background: rgba(59, 130, 246, 0.07);
   color: #2563eb;
+  font-weight: 600;
 }
 
+/* sidebar (kept mostly the same) */
 .sidebar {
   width: 270px;
   max-width: 30%;
@@ -373,17 +541,6 @@ onBeforeUnmount(() => {
   padding-right: 0.35rem;
 }
 
-.sidebar-list::-webkit-scrollbar {
-  width: 6px;
-}
-.sidebar-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-.sidebar-list::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.2);
-  border-radius: 999px;
-}
-
 .sidebar-item {
   border: none;
   border-radius: 0.8rem;
@@ -414,19 +571,19 @@ onBeforeUnmount(() => {
   box-shadow: 0 10px 24px rgba(79, 70, 229, 0.5);
 }
 
-.sidebar-item.active .sidebar-rating {
-  color: #fde68a;
-}
-
 .sidebar-movie-title {
-  font-weight: 500;
+  font-weight: 600;
   text-align: left;
 }
 
 .sidebar-rating {
-  font-weight: 600;
-  font-size: 0.75rem;
+  font-weight: 800;
+  font-size: 0.78rem;
   color: #7e22ce;
+}
+
+.sidebar-item.active .sidebar-rating {
+  color: #fde68a;
 }
 
 @media (max-width: 900px) {
@@ -445,14 +602,20 @@ onBeforeUnmount(() => {
     max-height: none;
     margin-top: 1rem;
   }
+}
 
-  .poster-wrapper {
-    flex: 0 0 120px;
+@media (max-width: 560px) {
+  .card-grid {
+    grid-template-columns: 112px 1fr;
   }
 
-  .poster-img {
-    width: 120px;
-    height: 180px;
+  .poster-sq {
+    width: 112px;
+    height: 112px;
+  }
+
+  .user-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>

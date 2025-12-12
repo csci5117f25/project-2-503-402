@@ -15,7 +15,7 @@ import { TMDB } from '@lorenzopant/tmdb';
 ////  Data types
 //
 
-
+// look at this while figuring out main page data retrieval
 export interface MovieData {
   title: string,
   release_date: string,
@@ -56,6 +56,7 @@ export const tmdb = new TMDB(
 )
 
 // tmdb variables
+// Movie image
 export const tmdbConfig = await tmdb.config.get()
 export const tmdbURL = tmdbConfig.images.base_url;
 export const tmdbImageURL = (path: string) => {
