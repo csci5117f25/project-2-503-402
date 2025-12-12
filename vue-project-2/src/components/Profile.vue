@@ -4,6 +4,9 @@ import { ref, computed, watch } from 'vue'
 import { useCurrentUser, useFirestore } from 'vuefire'
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
 import { Film, BarChart3, X } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const currentUser = useCurrentUser()
 const db = useFirestore()
@@ -27,41 +30,32 @@ const showMoviesList = ref(false)
 const watchedMovies = ref<Array<{ id: string; title: string; year?: number; poster?: string }>>([])
 const isLoadingMovies = ref(false)
 
-const movies = ref([
-  {
-    id: 1,
-    title: 'Inception',
-    year: 2010,
-    rating: 4.8,
-    poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&h=450&fit=crop',
-  },
-  {
-    id: 2,
-    title: 'The Matrix',
-    year: 1999,
-    rating: 4.7,
-    poster: 'https://images.unsplash.com/photo-1594908900066-3f47337549d8?w=300&h=450&fit=crop',
-  },
-  {
-    id: 3,
-    title: 'Interstellar',
-    year: 2014,
-    rating: 4.9,
-    poster: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=300&h=450&fit=crop',
-  },
-  {
-    id: 4,
-    title: 'Blade Runner 2049',
-    year: 2017,
-    rating: 4.5,
-    poster: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=300&h=450&fit=crop',
-  },
-])
+const draftReviews = ref<Array<{
+  id: string
+  title: string
+  year?: number
+  poster?: string
+  rating?: number
+  comment?: string
+}>>([])
+const isLoadingDrafts = ref(false)
+
+function navigateToDraft(movieId: string, rating?: number, comment?: string) {
+  router.push({
+    name: 'form',
+    query: {
+      movieId: movieId,
+      rating: rating?.toString() || '',
+      comment: comment || ''
+    }
+  })
+}
 
 // Calculate statistics when user changes
 watch(user, async (newUser) => {
   if (newUser) {
     await calculateStats(newUser.uid)
+    await fetchDraftReviews(newUser.uid)
   }
 }, { immediate: true })
 
@@ -92,16 +86,15 @@ async function calculateStats(userId: string) {
       const reviewData = reviewDoc.data()
       const movieId = reviewDoc.id
 
-      if (reviewData) {
+      // Only count reviews where draft is false
+      if (reviewData && reviewData.draft === false) {
         totalMovies++
 
         if (reviewData.rating !== undefined) {
           totalRating += reviewData.rating
           ratingCount++
         }
-      }
 
-      if (reviewData) {
         try {
           const movieRef = doc(db, 'movies', movieId)
           const movieSnap = await getDoc(movieRef)
@@ -156,6 +149,66 @@ async function calculateStats(userId: string) {
   }
 }
 
+async function fetchDraftReviews(userId: string) {
+  isLoadingDrafts.value = true
+
+  try {
+    const reviewsRef = collection(db, 'users', userId, 'reviews')
+    const reviewsSnapshot = await getDocs(reviewsRef)
+
+    const drafts: Array<{
+      id: string
+      title: string
+      year?: number
+      poster?: string
+      rating?: number
+      comment?: string
+    }> = []
+
+    for (const reviewDoc of reviewsSnapshot.docs) {
+      const reviewData = reviewDoc.data()
+      const movieId = reviewDoc.id
+
+      // Check if draft is true
+      if (reviewData.draft === true) {
+        try {
+          const movieRef = doc(db, 'movies', movieId)
+          const movieSnap = await getDoc(movieRef)
+
+          if (movieSnap.exists()) {
+            const movieData = movieSnap.data()
+            const posterUrl = movieData.poster_path
+              ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
+              : undefined
+            const year = movieData.release_date
+              ? new Date(movieData.release_date).getFullYear()
+              : undefined
+
+            drafts.push({
+              id: movieId,
+              title: movieData.title || 'Unknown Title',
+              year: year,
+              poster: posterUrl,
+              rating: reviewData.rating,
+              comment: reviewData.comment
+            })
+          }
+        } catch (error) {
+          console.error(`Error fetching movie ${movieId}:`, error)
+        }
+      }
+    }
+
+    // Sort by title
+    drafts.sort((a, b) => a.title.localeCompare(b.title))
+    draftReviews.value = drafts
+  } catch (error) {
+    console.error('Error fetching draft reviews:', error)
+  } finally {
+    isLoadingDrafts.value = false
+  }
+}
+
 async function fetchWatchedMovies() {
   if (!user.value) return
 
@@ -169,26 +222,30 @@ async function fetchWatchedMovies() {
     const moviesList: Array<{ id: string; title: string; year?: number; poster?: string }> = []
 
     for (const reviewDoc of reviewsSnapshot.docs) {
+      const reviewData = reviewDoc.data()
       const movieId = reviewDoc.id
 
-      try {
-        const movieRef = doc(db, 'movies', movieId)
-        const movieSnap = await getDoc(movieRef)
+      // Only show movies where draft is false
+      if (reviewData.draft === false) {
+        try {
+          const movieRef = doc(db, 'movies', movieId)
+          const movieSnap = await getDoc(movieRef)
 
-        if (movieSnap.exists()) {
-          const movieData = movieSnap.data()
-          const posterUrl = movieData.poster_path
-            ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
-            : undefined
-          moviesList.push({
-            id: movieId,
-            title: movieData.title || 'Unknown Title',
-            year: movieData.release_date ? new Date(movieData.release_date).getFullYear() : undefined,
-            poster: posterUrl
-          })
+          if (movieSnap.exists()) {
+            const movieData = movieSnap.data()
+            const posterUrl = movieData.poster_path
+              ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
+              : undefined
+            moviesList.push({
+              id: movieId,
+              title: movieData.title || 'Unknown Title',
+              year: movieData.release_date ? new Date(movieData.release_date).getFullYear() : undefined,
+              poster: posterUrl
+            })
+          }
+        } catch (error) {
+          console.error(`Error fetching movie ${movieId}:`, error)
         }
-      } catch (error) {
-        console.error(`Error fetching movie ${movieId}:`, error)
       }
     }
 
@@ -249,7 +306,7 @@ function closeMoviesList() {
         </div>
         <div class="stat-card">
           <h3>{{ stats.totalHours }}</h3>
-          <p>Hours Watched</p>
+          <p>Total Hours Watched</p>
         </div>
         <div class="stat-card">
           <h3>{{ stats.favoriteGenre }}</h3>
@@ -257,7 +314,7 @@ function closeMoviesList() {
         </div>
         <div class="stat-card">
           <h3>{{ stats.averageRating }}</h3>
-          <p>Avg Rating (out of 10)</p>
+          <p>Average Rating (out of 10)</p>
         </div>
       </div>
 
@@ -298,16 +355,40 @@ function closeMoviesList() {
       <!-- Movie Cards Section -->
       <div class="section-divider">
         <Film :size="20" />
-        <h2>Your Movie Collection</h2>
+        <h2>Review Draft Collection</h2>
       </div>
 
-      <div class="movies-section">
-        <div v-for="movie in movies" :key="movie.id" class="movie-card">
-          <img :src="movie.poster" :alt="movie.title" class="movie-poster" />
+      <div v-if="isLoadingDrafts" class="loading-stats">
+        Loading your draft reviews...
+      </div>
+
+      <div v-else-if="draftReviews.length === 0" class="no-drafts">
+        <p>No draft reviews found</p>
+      </div>
+
+      <div v-else class="movies-section">
+        <div
+          v-for="movie in draftReviews"
+          :key="movie.id"
+          class="movie-card"
+          @click="navigateToDraft(movie.id, movie.rating, movie.comment)"
+        >
+          <img
+            v-if="movie.poster"
+            :src="movie.poster"
+            :alt="movie.title"
+            class="movie-poster"
+          />
+          <div v-else class="movie-poster-placeholder">
+            <Film :size="48" />
+          </div>
           <div class="movie-info">
             <h3>{{ movie.title }}</h3>
-            <p>{{ movie.year }}</p>
-            <div class="movie-rating">⭐ {{ movie.rating }}</div>
+            <p v-if="movie.year" class="movie-year">{{ movie.year }}</p>
+            <div v-if="movie.rating !== undefined" class="movie-rating">
+              ⭐ {{ movie.rating }}
+            </div>
+            <p v-if="movie.comment" class="movie-comment">{{ movie.comment }}</p>
           </div>
         </div>
       </div>
@@ -646,6 +727,13 @@ function closeMoviesList() {
   color: #6b7280;
 }
 
+.no-drafts {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
 .movies-section {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -674,6 +762,16 @@ function closeMoviesList() {
   object-fit: cover;
 }
 
+.movie-poster-placeholder {
+  width: 100%;
+  height: 350px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+
 .movie-info {
   padding: 1rem;
 }
@@ -684,7 +782,7 @@ function closeMoviesList() {
   color: #1f2937;
 }
 
-.movie-info p {
+.movie-year {
   margin: 0;
   color: #6b7280;
   font-size: 0.9rem;
@@ -694,6 +792,14 @@ function closeMoviesList() {
   margin-top: 0.5rem;
   color: #f59e0b;
   font-weight: 600;
+}
+
+.movie-comment {
+  margin-top: 0.75rem;
+  color: #4b5563;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-style: italic;
 }
 
 .not-logged-in {

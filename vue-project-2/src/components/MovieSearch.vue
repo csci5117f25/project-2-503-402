@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Clapperboard } from 'lucide-vue-next';
 import { getMovie, tmdb } from '../movies';
-import { ref, } from 'vue';
+import { ref, watch } from 'vue';
 import type { MovieResultItem } from '@lorenzopant/tmdb';
 
-defineProps({
+const props = defineProps({
   id: {
     type: Number,
     default: undefined
@@ -18,10 +18,25 @@ const emit = defineEmits([
   'update:id'
 ])
 
-// Debounce search entries
 const searchText = ref('');
 const searchResults = ref<MovieResultItem[]>([]);
 let searchTimeout: number | null = null;
+
+// Watch for id prop changes and fetch movie title
+watch(() => props.id, async (newId) => {
+  if (newId && newId !== undefined) {
+    try {
+      const movie = await getMovie(newId);
+      if (movie) {
+        const year = movie.release_date ? new Date(movie.release_date).getFullYear() : null;
+        searchText.value = year ? `${movie.title} (${year})` : movie.title;
+      }
+    } catch (error) {
+      console.error('Error fetching movie:', error);
+    }
+  }
+}, { immediate: true });
+
 function searchBar() {
   emit('update:id', null)  // if anything changes, invalidate ID
   if(searchTimeout)
