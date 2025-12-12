@@ -383,9 +383,10 @@ async function loadHomeReviews(uid: string) {
           posterUrl,
         } satisfies ReviewCard
       })
-      .filter((x): x is ReviewCard => !!x)
+      .filter((x): x is ReviewCard => !!x && !x.draft) // ✅ HIDE drafts here
 
     reviews.value = cards
+
 
     cardRefs.value = []
     sidebarItemRefs.value = []
