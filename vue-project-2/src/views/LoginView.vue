@@ -1,23 +1,19 @@
 <template>
-
-    <div class="center">
-        <div class="not-logged-in">
-            <div class="icon">📽️</div>
-            <h2>Login First</h2>
-            <p>To use MOVIETRACKER, you must be logged in!</p>
-        </div>
+  <div class="center">
+    <div class="not-logged-in">
+      <div class="icon">📽️</div>
+      <h2>Login First</h2>
+      <p>To use MOVIETRACKER, you must be logged in!</p>
     </div>
-
+  </div>
 </template>
 
 <style scoped>
-
 .center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
 
 .not-logged-in {
   text-align: center;

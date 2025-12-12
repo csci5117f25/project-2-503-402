@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import MovieSearch from '@/components/MovieSearch.vue';
-import { Star } from 'lucide-vue-next';
-import { useCurrentUser } from 'vuefire';
+import MovieSearch from '@/components/MovieSearch.vue'
+import { Star } from 'lucide-vue-next'
+import { useCurrentUser } from 'vuefire'
 import { computed, ref, onMounted } from 'vue'
-import { addUserReview, getMovie, type UserReview } from '@/movies';
-import { useRoute } from 'vue-router';
+import { addUserReview, getMovie, type UserReview } from '@/movies'
+import { useRoute } from 'vue-router'
 
-const route = useRoute();
+const route = useRoute()
 
 // Hold movie ID from movie search component
 const movieId = ref<number | undefined>(undefined)
-const currentUser = useCurrentUser();
-const userId = computed(() => currentUser.value?.uid ? currentUser.value.uid : null)
+const currentUser = useCurrentUser()
+const userId = computed(() => (currentUser.value?.uid ? currentUser.value.uid : null))
 
 const rating = ref<number | undefined>(undefined)
 const comment = ref<string>('')
@@ -32,14 +32,12 @@ onMounted(async () => {
 })
 
 // TODO enforce movie exists
-async function movieUpdate (id: number) {
-  if(!id)
-    return
-  try{
+async function movieUpdate(id: number) {
+  if (!id) return
+  try {
     await getMovie(id)
     console.log(`Movie id: ${id}`)
-  }
-  catch(err) {
+  } catch (err) {
     console.log(err)
     alert('Invalid movie selected!')
   }
@@ -47,30 +45,28 @@ async function movieUpdate (id: number) {
 
 // Submit handler
 async function handleSubmit(event: SubmitEvent) {
-  if(!userId.value) {
-    throw new Error("User needs to be logged in for form submission")
+  if (!userId.value) {
+    throw new Error('User needs to be logged in for form submission')
   }
-  if(!movieId.value) {
+  if (!movieId.value) {
     throw new Error('Invalid movie selected')
   }
 
-  const formData = new FormData(<HTMLFormElement>event.target);
+  const formData = new FormData(<HTMLFormElement>event.target)
   const review: UserReview = {
     rating: parseInt(formData.get('rating') as string),
     comment: formData.get('comment') as string,
-    draft: (<HTMLButtonElement>event.submitter).value === "draft"
+    draft: (<HTMLButtonElement>event.submitter).value === 'draft',
   }
 
-  await addUserReview(userId.value, movieId.value, review);
+  await addUserReview(userId.value, movieId.value, review)
   console.log(`Submitted user review, user ${userId.value}`)
 }
 </script>
 
 <template>
-
   <form class="form-container" @submit.prevent="handleSubmit">
     <div class="box">
-
       <MovieSearch v-model:id="movieId" @update:id="movieUpdate($event)"></MovieSearch>
 
       <label class="label">Your Rating (1-10)</label>
@@ -84,7 +80,7 @@ async function handleSubmit(event: SubmitEvent) {
           min="1"
           max="10"
           v-model="rating"
-        >
+        />
         <span class="icon is-small is-left">
           <Star />
         </span>
@@ -96,7 +92,7 @@ async function handleSubmit(event: SubmitEvent) {
           class="textarea"
           name="comment"
           rows="4"
-          maxlength="255"
+          maxlength="2000"
           placeholder="What made you remember this movie?"
           v-model="comment"
         ></textarea>
@@ -106,12 +102,9 @@ async function handleSubmit(event: SubmitEvent) {
     <button class="button" type="submit" value="post">Submit</button>
     <button class="button" type="submit" value="draft">Save Draft</button>
   </form>
-
 </template>
 
-
 <style scoped>
-
 form.form-container {
   display: flex;
   flex-direction: column;
@@ -127,5 +120,4 @@ div.box {
 label {
   margin-top: 2vh;
 }
-
 </style>

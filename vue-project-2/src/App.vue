@@ -31,8 +31,7 @@ async function login() {
   try {
     if (auth) {
       await signInWithPopup(auth, provider)
-      if(!(await getCurrentUser()))
-        throw new Error('Invalid user')
+      if (!(await getCurrentUser())) throw new Error('Invalid user')
       router.push('/')
     }
   } catch (error) {
@@ -43,8 +42,8 @@ async function login() {
 async function logout() {
   try {
     if (auth) {
-      await signOut(auth);
-      router.push('/login');
+      await signOut(auth)
+      router.push('/login')
     }
   } catch (error) {
     console.error('Logout failed:', error)
@@ -136,7 +135,7 @@ header {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 9999;
 }
 
 .header-content {
