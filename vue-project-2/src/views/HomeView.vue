@@ -94,13 +94,35 @@
                     <p v-if="review.tagline" class="movie-tagline">{{ review.tagline }}</p>
                   </div>
 
-                  <div class="global-rating">
-                    <div class="global-stars">
-                      <span class="star">★</span>
-                      <span class="global-score">{{ formatOneDecimal(review.rating_avg) }}</span>
-                      <span class="global-outof">/10</span>
+                  <div class="top-right">
+                    <div class="global-rating">
+                      <div class="global-stars">
+                        <span class="star">★</span>
+                        <span class="global-score">{{ formatOneDecimal(review.rating_avg) }}</span>
+                        <span class="global-outof">/10</span>
+                      </div>
+                      <div class="global-count">{{ formatCount(review.rating_count) }} ratings</div>
                     </div>
-                    <div class="global-count">{{ formatCount(review.rating_count) }} ratings</div>
+
+                    <div class="card-actions">
+                      <button
+                        type="button"
+                        class="icon-btn"
+                        @click="openEdit(review)"
+                        :disabled="reviewSavingId === review.movieId"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        class="icon-btn danger"
+                        @click="confirmDelete(review)"
+                        :disabled="reviewSavingId === review.movieId"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -134,8 +156,6 @@
                         {{ review.rewatch ? 'Rewatch' : 'One-time' }}
                       </span>
                     </button>
-
-                    <div v-if="review.draft" class="draft-pill">Draft</div>
                   </div>
 
                   <div class="user-thoughts">
@@ -192,6 +212,49 @@
         </div>
       </aside>
     </div>
+
+    <!-- ✅ Edit Modal -->
+    <div v-if="editOpen" class="modal-backdrop" @click.self="closeEdit">
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title">Edit review</div>
+          <button class="icon-btn" type="button" @click="closeEdit">Close</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-movie">{{ editDraft?.title }}</div>
+
+          <label class="field">
+            <span class="field-label">Your rating (0–10)</span>
+            <input
+              class="field-input"
+              type="number"
+              min="0"
+              max="10"
+              step="0.1"
+              v-model.number="editForm.rating"
+            />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Your thoughts</span>
+            <textarea class="field-textarea" rows="4" v-model="editForm.thoughts"></textarea>
+          </label>
+        </div>
+
+        <div class="modal-foot">
+          <button class="btn" type="button" @click="closeEdit">Cancel</button>
+          <button
+            class="btn primary"
+            type="button"
+            @click="saveEdit"
+            :disabled="!editDraft || savingEdit"
+          >
+            {{ savingEdit ? 'Saving…' : 'Save changes' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -203,6 +266,7 @@ import {
   getUserMovieReviews,
   tmdbImageURL,
   addUserReview,
+  removeUserReview,
   type UserReview,
 } from '@/movies'
 
@@ -241,26 +305,91 @@ const navOffset = ref(90)
 const isJumping = ref(false)
 
 const reviewSavingId = ref<number | null>(null)
-
 const currentYear = new Date().getFullYear()
+
+/** ✅ Edit modal state */
+const editOpen = ref(false)
+const savingEdit = ref(false)
+const editDraft = ref<ReviewCard | null>(null)
+const editForm = ref<{ rating: number | null; thoughts: string }>({ rating: null, thoughts: '' })
+
+function openEdit(r: ReviewCard) {
+  editDraft.value = r
+  editForm.value = { rating: r.user_rating ?? null, thoughts: r.user_thoughts ?? '' }
+  editOpen.value = true
+}
+function closeEdit() {
+  editOpen.value = false
+  editDraft.value = null
+  editForm.value = { rating: null, thoughts: '' }
+}
+
+async function saveEdit() {
+  if (!userId.value || !editDraft.value) return
+
+  const movieId = editDraft.value.movieId
+  savingEdit.value = true
+  reviewSavingId.value = movieId
+
+  try {
+    const payload: UserReview = {
+      rating: editForm.value.rating ?? null,
+      comment: editForm.value.thoughts?.trim() ? editForm.value.thoughts.trim() : null,
+      draft: false,
+      rewatch: editDraft.value.rewatch ?? false,
+    }
+
+    await addUserReview(userId.value, movieId, payload)
+
+    editDraft.value.user_rating = payload.rating
+    editDraft.value.user_thoughts = payload.comment
+
+    closeEdit()
+  } catch (e) {
+    console.error(e)
+  } finally {
+    savingEdit.value = false
+    reviewSavingId.value = null
+  }
+}
+
+async function confirmDelete(r: ReviewCard) {
+  if (!userId.value) return
+  const ok = window.confirm(`Delete your review for "${r.title}"?`)
+  if (!ok) return
+
+  reviewSavingId.value = r.movieId
+  try {
+    await removeUserReview(userId.value, r.movieId)
+
+    reviews.value = reviews.value.filter((x) => x.movieId !== r.movieId)
+    cardRefs.value = []
+    sidebarItemRefs.value = []
+
+    if (activeReviewId.value === r.movieId) {
+      activeReviewId.value = reviews.value[0]?.movieId ?? null
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    reviewSavingId.value = null
+  }
+}
 
 function formatOneDecimal(n: number | null | undefined) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—'
   return n.toFixed(1)
 }
-
 function formatCount(n: number | null | undefined) {
   if (n === null || n === undefined || Number.isNaN(n)) return '0'
   return Intl.NumberFormat('en-US').format(n)
 }
-
 function formatDate(iso: string) {
   if (!iso) return 'Unknown'
   const d = new Date(iso + 'T00:00:00')
   if (Number.isNaN(d.getTime())) return iso
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
-
 function formatMoney(n: number) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -318,9 +447,9 @@ function timeAgo(d: Date | null): string {
 
 const yearStats = computed(() => {
   const list = reviews.value.filter((r) => !r.draft)
+
   let hotTake: ReviewCard | null = null
   let hotDelta = -Infinity
-
   for (const r of list) {
     const d = deltaValue(r)
     if (d === null) continue
@@ -329,12 +458,10 @@ const yearStats = computed(() => {
       hotTake = r
     }
   }
-
   const hotTakeDelta = hotTake && hotDelta !== -Infinity ? `+${hotDelta.toFixed(1)}` : null
 
   let favorite: ReviewCard | null = null
   let bestRating = -Infinity
-
   for (const r of list) {
     if (r.user_rating === null || r.user_rating === undefined) continue
     if (r.user_rating > bestRating) {
@@ -345,7 +472,6 @@ const yearStats = computed(() => {
 
   let recent: ReviewCard | null = null
   let recentDate: Date | null = null
-
   for (const r of list) {
     const d = toDateMaybe(r.loggedAt)
     if (!d) continue
@@ -443,12 +569,15 @@ async function loadHomeReviews(uid: string) {
           rating_count: item.rating_count,
           budget: item.budget && item.budget > 0 ? item.budget : null,
           genresText,
+
           user_rating: item.rating ?? null,
           user_thoughts: item.comment ?? null,
           draft: item.draft ?? false,
+
           rewatch: (item as any).rewatch ?? false,
           loggedAt:
             (item as any).loggedAt ?? (item as any).updatedAt ?? (item as any).createdAt ?? null,
+
           posterUrl,
         } satisfies ReviewCard
       })

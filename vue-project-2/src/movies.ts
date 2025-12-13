@@ -34,12 +34,15 @@ export interface UserReview {
   comment: string | null
   draft?: boolean
   rewatch?: boolean
+  loggedAt?: any
 }
 
 export type UserMovieReview = MovieData & {
   rating: number | null
   comment: string | null
   draft?: boolean
+  rewatch?: boolean
+  loggedAt?: any
 }
 
 //
@@ -81,7 +84,10 @@ const MovieConverter: FirestoreDataConverter<MovieData> = {
     const data = snapshot.data(options)
     return {
       ...data,
-      cached_at: data.cached_at.toDate(),
+      cached_at:
+        typeof data.cached_at?.toDate === 'function'
+          ? data.cached_at.toDate()
+          : new Date(data.cached_at),
     } as MovieData
   },
 }
