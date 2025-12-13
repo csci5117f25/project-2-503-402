@@ -22,25 +22,48 @@
 
           <div class="year-metrics">
             <div class="metric">
-              <div class="metric-label">Movies logged</div>
-              <div class="metric-value">{{ yearStats.count }}</div>
+              <div class="metric-label">Hot take of the year</div>
+
+              <div class="metric-value metric-ellipsis" :title="yearStats.hotTakeTitle">
+                {{ yearStats.hotTakeTitle }}
+              </div>
+
+              <div class="metric-sub" v-if="yearStats.hotTakeDelta !== null">
+                You {{ yearStats.hotTakeYou }} · TMDB {{ yearStats.hotTakeTmdb }} ·
+                <span class="metric-delta pos">{{ yearStats.hotTakeDelta }}</span>
+              </div>
+              <div class="metric-sub" v-else>—</div>
             </div>
 
             <div class="metric">
-              <div class="metric-label">Avg your rating</div>
-              <div class="metric-value">{{ yearStats.avgUserRating }}</div>
+              <div class="metric-label">Personal favorite</div>
+
+              <div class="metric-value metric-ellipsis" :title="yearStats.favoriteTitle">
+                {{ yearStats.favoriteTitle }}
+              </div>
+
+              <div class="metric-sub" v-if="yearStats.favoriteRating !== null">
+                Your rating: {{ yearStats.favoriteRating }}/10
+              </div>
+              <div class="metric-sub" v-else>—</div>
             </div>
 
             <div class="metric">
-              <div class="metric-label">Top genre</div>
-              <div class="metric-value metric-ellipsis" :title="yearStats.topGenre">
-                {{ yearStats.topGenre }}
+              <div class="metric-label">Recently watched</div>
+
+              <div class="metric-value metric-ellipsis" :title="yearStats.recentTitle">
+                {{ yearStats.recentTitle }}
+              </div>
+
+              <div class="metric-sub">
+                {{ yearStats.recentWhen }}
               </div>
             </div>
 
             <div class="metric">
               <div class="metric-label">Rewatch</div>
               <div class="metric-value">{{ yearStats.rewatchCount }}</div>
+              <div class="metric-sub">{{ yearStats.rewatchRate }}</div>
             </div>
           </div>
         </div>
@@ -65,7 +88,7 @@
               </div>
 
               <div class="card-main">
-                <header class="top-row">
+                <div class="top-row">
                   <div class="title-block">
                     <h3 class="movie-title">{{ review.title }}</h3>
                     <p v-if="review.tagline" class="movie-tagline">{{ review.tagline }}</p>
@@ -79,7 +102,7 @@
                     </div>
                     <div class="global-count">{{ formatCount(review.rating_count) }} ratings</div>
                   </div>
-                </header>
+                </div>
 
                 <div class="user-row">
                   <div class="user-rating">
@@ -200,7 +223,7 @@ type ReviewCard = {
   draft?: boolean
 
   rewatch?: boolean | null
-
+  loggedAt?: any | null
   posterUrl?: string | null
 }
 
@@ -270,45 +293,92 @@ function deltaClass(r: ReviewCard) {
   return 'neutral'
 }
 
+function toDateMaybe(v: any): Date | null {
+  if (!v) return null
+  if (typeof v?.toDate === 'function') return v.toDate()
+  if (v instanceof Date) return v
+  if (typeof v === 'number') return new Date(v)
+  if (typeof v === 'string') {
+    const d = new Date(v)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+  return null
+}
+
+function timeAgo(d: Date | null): string {
+  if (!d) return '—'
+  const diff = Date.now() - d.getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins} min ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs} hr ago`
+  const days = Math.floor(hrs / 24)
+  return `${days} day${days === 1 ? '' : 's'} ago`
+}
+
 const yearStats = computed(() => {
   const list = reviews.value.filter((r) => !r.draft)
+  let hotTake: ReviewCard | null = null
+  let hotDelta = -Infinity
 
-  const count = list.length
-
-  const rated = list
-    .map((r) => r.user_rating)
-    .filter((x): x is number => x !== null && x !== undefined && !Number.isNaN(x))
-
-  const avgUserRating =
-    rated.length > 0 ? (rated.reduce((a, b) => a + b, 0) / rated.length).toFixed(1) : '—'
-
-  const genreCounts = new Map<string, number>()
   for (const r of list) {
-    if (!r.genresText) continue
-    const parts = r.genresText
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-    for (const g of parts) {
-      genreCounts.set(g, (genreCounts.get(g) ?? 0) + 1)
+    const d = deltaValue(r)
+    if (d === null) continue
+    if (d > 0 && d > hotDelta) {
+      hotDelta = d
+      hotTake = r
     }
   }
-  let topGenre = '—'
-  let best = 0
-  for (const [g, c] of genreCounts.entries()) {
-    if (c > best) {
-      best = c
-      topGenre = g
+
+  const hotTakeDelta = hotTake && hotDelta !== -Infinity ? `+${hotDelta.toFixed(1)}` : null
+
+  let favorite: ReviewCard | null = null
+  let bestRating = -Infinity
+
+  for (const r of list) {
+    if (r.user_rating === null || r.user_rating === undefined) continue
+    if (r.user_rating > bestRating) {
+      bestRating = r.user_rating
+      favorite = r
+    }
+  }
+
+  let recent: ReviewCard | null = null
+  let recentDate: Date | null = null
+
+  for (const r of list) {
+    const d = toDateMaybe(r.loggedAt)
+    if (!d) continue
+    if (!recentDate || d.getTime() > recentDate.getTime()) {
+      recentDate = d
+      recent = r
     }
   }
 
   const rewatchCount = list.filter((r) => !!r.rewatch).length
+  const rewatchRate =
+    list.length > 0 ? `${Math.round((rewatchCount / list.length) * 100)}% rewatch` : '—'
 
   return {
-    count,
-    avgUserRating,
-    topGenre,
+    hotTakeTitle: hotTake?.title ?? '—',
+    hotTakeDelta,
+    hotTakeYou:
+      hotTake?.user_rating !== null && hotTake?.user_rating !== undefined
+        ? hotTake.user_rating.toFixed(1)
+        : '—',
+    hotTakeTmdb: hotTake ? formatOneDecimal(hotTake.rating_avg) : '—',
+
+    favoriteTitle: favorite?.title ?? '—',
+    favoriteRating:
+      favorite?.user_rating !== null && favorite?.user_rating !== undefined
+        ? favorite.user_rating.toFixed(1)
+        : null,
+
+    recentTitle: recent?.title ?? '—',
+    recentWhen: recentDate ? timeAgo(recentDate) : 'Needs loggedAt',
+
     rewatchCount,
+    rewatchRate,
   }
 })
 
@@ -373,20 +443,18 @@ async function loadHomeReviews(uid: string) {
           rating_count: item.rating_count,
           budget: item.budget && item.budget > 0 ? item.budget : null,
           genresText,
-
           user_rating: item.rating ?? null,
           user_thoughts: item.comment ?? null,
           draft: item.draft ?? false,
-
           rewatch: (item as any).rewatch ?? false,
-
+          loggedAt:
+            (item as any).loggedAt ?? (item as any).updatedAt ?? (item as any).createdAt ?? null,
           posterUrl,
         } satisfies ReviewCard
       })
-      .filter((x): x is ReviewCard => !!x && !x.draft) // ✅ HIDE drafts here
+      .filter((x): x is ReviewCard => !!x && !x.draft)
 
     reviews.value = cards
-
 
     cardRefs.value = []
     sidebarItemRefs.value = []
