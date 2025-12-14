@@ -30,16 +30,16 @@ export interface MovieData {
 }
 
 export interface UserReview {
-  rating: number | null
-  comment: string | null
+  rating: number
+  comment: string
   draft?: boolean
   rewatch?: boolean
   loggedAt?: any
 }
 
 export type UserMovieReview = MovieData & {
-  rating: number | null
-  comment: string | null
+  rating: number
+  comment: string
   draft?: boolean
   rewatch?: boolean
   loggedAt?: any
@@ -208,16 +208,9 @@ export async function getUserMovieReview(
     getMovie(movieId),
   ])
 
-  if (movieData) {
-    if (userReview.exists()) {
-      return {
-        ...(userReview.data() as UserReview),
-        ...movieData,
-      }
-    }
+  if (movieData && userReview.exists()) {
     return {
-      rating: null,
-      comment: null,
+      ...(userReview.data() as UserReview),
       ...movieData,
     }
   }
@@ -239,4 +232,20 @@ export async function getAllUserMovieReviews(userId: string) {
     movieIds.push(parseInt(id))
   }
   return await getUserMovieReviews(userId, movieIds)
+}
+
+// Get ALL user reviews + movie data as an OBJECT keyed by ID
+export async function getAllUserMovieReviewsObject(userId: string) {
+  const userReviews = await getAllUserReviews(userId)
+  const movieIds: number[] = []
+  for (const id of Object.keys(userReviews)) {
+    movieIds.push(parseInt(id))
+  }
+  const userMovieReviews: Record<string, UserMovieReview | null> = {};
+  const reviews = await getUserMovieReviews(userId, movieIds)
+  for(let i = 0; i < movieIds.length; i++) {
+    const id = movieIds[i] + ""
+    userMovieReviews[id] = reviews[i] ?? null;
+  }
+  return userMovieReviews;
 }
