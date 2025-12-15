@@ -231,7 +231,8 @@ export async function getAllUserMovieReviews(userId: string) {
   for (const id of Object.keys(userReviews)) {
     movieIds.push(parseInt(id))
   }
-  return await getUserMovieReviews(userId, movieIds)
+  const res = await getUserMovieReviews(userId, movieIds)
+  return res.filter(review => review != null)
 }
 
 // Get ALL user reviews + movie data as an OBJECT keyed by ID
@@ -241,11 +242,13 @@ export async function getAllUserMovieReviewsObject(userId: string) {
   for (const id of Object.keys(userReviews)) {
     movieIds.push(parseInt(id))
   }
-  const userMovieReviews: Record<string, UserMovieReview | null> = {};
+  const userMovieReviews: Record<string, UserMovieReview> = {};
   const reviews = await getUserMovieReviews(userId, movieIds)
   for(let i = 0; i < movieIds.length; i++) {
     const id = movieIds[i] + ""
-    userMovieReviews[id] = reviews[i] ?? null;
+    const review = reviews[i]
+    if(review)
+      userMovieReviews[id] = review;
   }
   return userMovieReviews;
 }
