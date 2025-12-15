@@ -1,12 +1,14 @@
+import {
+  getAllUserMovieReviewsObject,
+  type MovieData,
+  type UserMovieReview
+} from "./movies";
 
-
-
-// WANT TO MAKE SIMILARITIES REPORT
-// HEREs what I have
-
-import { getAllUserMovieReviewsObject } from "./movies";
+// WANT TO MAKE SIMILARITY REPORT
+// HERE IS WHAT I HAVE...
 
 /*
+VARIABLES
 release date
 runtime
 budget
@@ -43,13 +45,13 @@ METHODOLOGY
     RETURN Most similar movie + least similar movie (based on ratings)
 
   In non-overlap set    (ALLOW FAVORITES?)
-    RETURN extremas from
-
-  AT LA
-
+    RETURN extremas from weighted similarity
 */
 
-const genres: Record<number, string> = {
+const NUM_GENRES = 19;
+
+// List of genres from TMDB api
+export const genreMap: Record<number, string> = {
   28: "Action",
   12: "Adventure",
   16: "Animation",
@@ -71,26 +73,29 @@ const genres: Record<number, string> = {
   37: "Western"
 };
 
-// Order of genres (index mapping):
-// 0: Action
-// 1: Adventure
-// 2: Animation
-// 3: Comedy
-// 4: Crime
-// 5: Documentary
-// 6: Drama
-// 7: Family
-// 8: Fantasy
-// 9: History
-// 10: Horror
-// 11: Music
-// 12: Mystery
-// 13: Romance
-// 14: Science Fiction
-// 15: TV Movie
-// 16: Thriller
-// 17: War
-// 18: Western
+// Genre indexes for later simlarity matrix
+const genreIndexMap: Record<number, number> = {
+  28: 0,
+  12: 1,
+  16: 2,
+  35: 3,
+  80: 4,
+  99: 5,
+  18: 6,
+  10751: 7,
+  14: 8,
+  36: 9,
+  27: 10,
+  10402: 11,
+  9648: 12,
+  10749: 13,
+  878: 14,
+  10770: 15,
+  53: 16,
+  10752: 17,
+  37: 18
+};
+
 
 const genreSimilarityMatrix: number[][] = [
   // Action
@@ -133,6 +138,62 @@ const genreSimilarityMatrix: number[][] = [
   [0.8, 0.7, 0.1, 0.2, 0.2, -0.6, 0.5, 0.2, 0.6, 0.4, 0.3, 0.3, 0.3, 0.3, 0.6, 0.2, 0.4, 0.5, 1.0]
 ]
 
+
+// Get similarity factor between movies
+// Scaled between -1 and 1  (see above matrix)
+export function getMovieSimilarity(currentReview: MovieData, compareReview: MovieData) {
+
+  // Genre vector, [1/#genres] in pos of movie genres
+  const genreVector = (genres: number[]) => {
+    const vec = Array(NUM_GENRES).fill(0);
+    if(genres.length === 0)
+      return vec;
+    const w = 1 / genres.length;    // L-1 normalized
+    for(const genre of genres) {
+      if(genreIndexMap[genre])
+        vec[genreIndexMap[genre]] = w;
+    }
+    return vec;
+  }
+
+  // Multiply genre vectors by sim matrix
+  // vCurrent * simMatrix * vCompare.T
+  const getSim = (vin: number[], vout: number[]) => {
+    let sim = 0;
+    for(let i = 0; i < NUM_GENRES; i++) {
+      if(vin[i] === 0)
+        continue;
+      let dot = 0;
+      for(let j = 0; j < NUM_GENRES; j++) {
+        dot += genreSimilarityMatrix[i]![j]! * vout[j]!;
+      }
+      sim += dot * vin[i]!;
+    }
+    return Math.max(-1, Math.min(1, sim));  // clamp to [-1,1]
+  }
+
+  const currentGenres = Object.keys(currentReview.genres).map(Number);
+  const compareGenres = Object.keys(compareReview.genres).map(Number);
+  return getSim(genreVector(currentGenres), genreVector(compareGenres))
+}
+
+
+// Get difference between two user movie reviews (scaled by genre similarity)
+export function getUserReviewDiff(currentReview: UserMovieReview, compareReview: UserMovieReview) {
+  const sim = getMovieSimilarity(currentReview, compareReview);
+  const diff = currentReview.rating - compareReview.rating;
+  return diff * ((1 + sim) / 2);
+}
+
+
+// export async function testUserDiff() {
+//   const userReviews = await getAllUserMovieReviewsObject('LZbZsaWfRfO2q69nOSXFL6pW9PH2')
+//   const user2Reviews = await getAllUserMovieReviewsObject('8MKabnDEswMX2nqapeiQsqRSCRm1')
+//   console.log(userReviews)
+//   console.log(getUserReviewDiff(userReviews[3782], user2Reviews[3782]))
+// }
+
+
 // Lucas testing
 // 1st account LZbZsaWfRfO2q69nOSXFL6pW9PH2
 // 2nd account 8MKabnDEswMX2nqapeiQsqRSCRm1
@@ -152,7 +213,7 @@ export async function getUserSimilarities(currentUserId: string, compareUserId: 
     return null;
 
   const currentKeys = Object.keys(currentReviews);
-  const compareKeys = Object.keys(copmareReviews)
+  const compareKeys = Object.keys(copmareReviews);
 
   // Find overlapping IDs
   const sameIds = currentKeys.filter((key) => compareKeys.includes(key))
@@ -186,4 +247,7 @@ export async function getUserSimilarities(currentUserId: string, compareUserId: 
 
   // Calculate stats in non-overlap
   // TODO rate by [genre factor * rating]
+
+  // TODO average difference Give users a grade based on that
+  // Find highest diff, find lowest diff
 }

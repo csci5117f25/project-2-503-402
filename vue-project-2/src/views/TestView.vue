@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { getUserSimilarities } from '@/similarities';
+import { getUserSimilarities, testUserDiff } from '@/similarities';
 
   const getReviews = async () => {
     // if(userId.value)
     //   console.log(await getAllUserMovieReviewsObject(userId.value))
-
-    await getUserSimilarities('LZbZsaWfRfO2q69nOSXFL6pW9PH2', '8MKabnDEswMX2nqapeiQsqRSCRm1')
+    await testUserDiff()
   }
 
 </script>
