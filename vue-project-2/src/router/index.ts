@@ -6,6 +6,7 @@ import FormView from '@/views/FormView.vue'
 import ReportView from '@/views/ReportView.vue'
 import { getCurrentUser } from 'vuefire'
 import LoginView from '@/views/LoginView.vue'
+import TestView from '@/views/TestView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -45,6 +46,11 @@ const router = createRouter({
       name: 'login',
       component: LoginView,
     },
+    {
+      path: '/test',
+      name: 'test',
+      component: TestView
+    }
   ],
 })
 

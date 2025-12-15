@@ -61,6 +61,9 @@ async function handleSubmit(event: SubmitEvent) {
 
   await addUserReview(userId.value, movieId.value, review)
   console.log(`Submitted user review, user ${userId.value}`)
+  movieId.value = undefined;
+  rating.value = undefined;
+  comment.value = '';
 }
 </script>
 
@@ -115,9 +118,16 @@ form.form-container {
 
 div.box {
   width: 100%;
+  background-color: white;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
 }
 
-label {
+label.label {
   margin-top: 2vh;
+  color: black;
+}
+
+input.input {
+  background-color: rgba(148, 163, 184, 0.12);
 }
 </style>
