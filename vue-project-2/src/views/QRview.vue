@@ -3,30 +3,32 @@
   import { ref } from 'vue'
   import { useRouter, onBeforeRouteUpdate } from 'vue-router'
 
-  const router = useRouter()
 
+
+
+  const defaultConstraintOptions = [
+    { label: 'rear camera', constraints: { facingMode: 'environment' } },
+    { label: 'front camera', constraints: { facingMode: 'user' } }
+  ]
+  const constraintOptions = ref(defaultConstraintOptions)
+
+  const router = useRouter()
   const result = ref(null)
   const error = ref(null)
-
   const paused = ref(false)
-
 
 
   function handleSubmit() {
     router.push({name: 'report', params: { id: "qrId" }})
   }
 
-
-  onBeforeRouteUpdate(() => {
-    result.value = null
-    paused.value = false     // restart when route changes *to* this view
-  })
-
   function onDetect(detectedCodes) {
     console.log(detectedCodes)
     result.value = JSON.stringify(detectedCodes.map((code) => code.rawValue))
     paused.value = true
   }
+
+  // the next 3 functions are from: https://gruhn.github.io/vue-qrcode-reader/demos/FullDemo.html
   function paintBoundingBox(detectedCodes, ctx) {
     for (const detectedCode of detectedCodes) {
       const {
@@ -38,12 +40,6 @@
       ctx.strokeRect(x, y, width, height)
     }
   }
-
-  const defaultConstraintOptions = [
-    { label: 'rear camera', constraints: { facingMode: 'environment' } },
-    { label: 'front camera', constraints: { facingMode: 'user' } }
-  ]
-  const constraintOptions = ref(defaultConstraintOptions)
 
   async function onCameraReady() {
     // NOTE: on iOS we can't invoke `enumerateDevices` before the user has given
@@ -67,7 +63,6 @@
 
   function onError(err) {
     error.value = `[${err.name}]: `
-
     if (err.name === 'NotAllowedError') {
       error.value += 'you need to grant camera access permission'
     } else if (err.name === 'NotFoundError') {
@@ -88,11 +83,17 @@
     }
   }
 
+  onBeforeRouteUpdate(() => {
+    result.value = null
+    paused.value = false     // restart when route changes *to* this view
+  })
+
 
 </script>
 
 
 <template>
+
    <div class="qr-body">
       <div class="qr-text">
         <p class="error">{{ error }}</p>

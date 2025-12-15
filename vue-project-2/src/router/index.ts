@@ -8,6 +8,8 @@ import { getCurrentUser } from 'vuefire'
 import LoginView from '@/views/LoginView.vue'
 
 
+
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -39,7 +41,9 @@ const router = createRouter({
       path: '/report/:id',
       name: 'report',
       props: true,
-      component: ReportView,
+      component: ReportView
+    },
+    {
       path: '/login',
       name: 'login',
       component: LoginView
