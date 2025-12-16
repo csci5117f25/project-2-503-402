@@ -1,0 +1,342 @@
+.home-page {
+  min-height: 100vh;
+  padding: 7.5rem 1.75rem 3rem;
+  background: radial-gradient(circle at top left, #f6f7ff 0, #eef1f7 40%, #e5e9f0 100%);
+  box-sizing: border-box;
+  scroll-padding-top: 140px;
+}
+
+.home-inner {
+  max-width: 1320px;
+  margin: 0 auto;
+  display: flex;
+  gap: 2.5rem;
+  align-items: flex-start;
+}
+
+.cards-column {
+  flex: 1 1 auto;
+}
+
+.section-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: #111827;
+}
+
+.section-subtitle {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin-bottom: 1.1rem;
+}
+
+.year-card {
+  max-width: 920px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 1.1rem;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+  padding: 0.95rem 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.year-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.year-title {
+  font-size: 1rem;
+  font-weight: 850;
+  color: #111827;
+}
+
+.year-subtitle {
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: #6b7280;
+}
+
+.year-metrics {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.metric {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 0.9rem;
+  padding: 0.65rem 0.75rem;
+  min-width: 0;
+}
+
+.metric-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  font-weight: 800;
+}
+
+.metric-value {
+  margin-top: 0.25rem;
+  font-size: 1.02rem;
+  font-weight: 900;
+  color: #111827;
+}
+
+.metric-sub {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metric-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metric-delta {
+  font-weight: 950;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(148, 163, 184, 0.12);
+  color: #111827;
+}
+.metric-delta.pos {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.28);
+  color: #166534;
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.sidebar {
+  width: 270px;
+  max-width: 30%;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 1.1rem;
+  padding: 1.1rem 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+  position: sticky;
+  top: 110px;
+  max-height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+  margin-left: auto;
+}
+
+.sidebar-title {
+  font-size: 1rem;
+  font-weight: 750;
+  color: #111827;
+}
+
+.sidebar-subtitle {
+  font-size: 0.8rem;
+  color: #4b5563;
+  margin-top: 0.1rem;
+}
+
+.sidebar-list {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+}
+
+.sidebar-item {
+  border: none;
+  border-radius: 0.8rem;
+  padding: 0.4rem 0.55rem;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.sidebar-item:hover {
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+  transform: translateY(-1px);
+}
+
+.sidebar-item.active {
+  background: #111827;
+  color: #f9fafb;
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.35);
+}
+
+.sidebar-movie-title {
+  font-weight: 650;
+  text-align: left;
+}
+
+.sidebar-rating {
+  font-weight: 900;
+  font-size: 0.78rem;
+  color: #111827;
+}
+
+.sidebar-item.active .sidebar-rating {
+  color: #fde68a;
+}
+
+.empty-state {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 1rem;
+  padding: 1rem;
+  color: #374151;
+  max-width: 920px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modal {
+  width: min(520px, 100%);
+  background: #ffffff;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.28);
+  overflow: hidden;
+}
+
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.modal-title {
+  font-weight: 900;
+  color: #111827;
+}
+
+.modal-body {
+  padding: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.modal-movie {
+  font-weight: 850;
+  color: #111827;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field-label {
+  font-size: 0.78rem;
+  font-weight: 850;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field-input,
+.field-textarea {
+  width: 100%;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 0.6rem 0.7rem;
+  font-weight: 650;
+  color: #111827;
+  outline: none;
+}
+
+.field-textarea {
+  resize: vertical;
+  min-height: 92px;
+}
+
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  padding: 0.9rem 1rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.btn {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.9);
+  color: #111827;
+  font-weight: 850;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.85rem;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: #111827;
+  color: #f9fafb;
+  border-color: rgba(17, 24, 39, 0.65);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .home-inner {
+    flex-direction: column;
+  }
+
+  .year-card {
+    max-width: 100%;
+  }
+
+  .sidebar {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    margin-top: 1rem;
+  }
+
+  .year-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -5,38 +5,66 @@
         <h2 class="section-title">Your Reviews</h2>
         <p class="section-subtitle">Scroll through the movies you&apos;ve logged.</p>
 
-        <div class="cards-list">
-          <article
-            v-for="(review, index) in reviews"
-            :key="review.id"
-            :ref="(el) => (cardRefs[index] = el)"
-            class="review-card"
-          >
-            <div class="card-inner">
-              <div class="poster-wrapper">
-                <img :src="review.posterUrl" :alt="`${review.title} poster`" class="poster-img" />
+        <div v-if="!userId" class="empty-state">Please sign in to see your reviews.</div>
+        <div v-else-if="loading" class="empty-state">Loading your reviews…</div>
+        <div v-else-if="loadError" class="empty-state">
+          {{ loadError }}
+        </div>
+        <div v-else-if="reviews.length === 0" class="empty-state">
+          No reviews yet — add one in the Form.
+        </div>
+
+        <div v-else class="year-card">
+          <div class="year-card-top">
+            <div class="year-title">This year in movies</div>
+            <div class="year-subtitle">{{ currentYear }} so far</div>
+          </div>
+
+          <div class="year-metrics">
+            <div class="metric">
+              <div class="metric-label">Hot take of the year</div>
+              <div class="metric-value metric-ellipsis" :title="yearStats.hotTakeTitle">
+                {{ yearStats.hotTakeTitle }}
               </div>
 
-              <div class="card-content">
-                <header class="review-header">
-                  <div>
-                    <h3 class="movie-title">{{ review.title }}</h3>
-                    <div class="meta-row">
-                      <span class="rating-chip">⭐ {{ review.rating.toFixed(1) }}/10</span>
-                      <span class="meta-item">{{ review.date }}</span>
-                      <span class="meta-item">Where: {{ review.watchedWhere }}</span>
-                    </div>
-                  </div>
-                </header>
-
-                <p class="review-body">{{ review.commentary }}</p>
-
-                <footer class="tag-row">
-                  <span v-for="tag in review.tags" :key="tag" class="tag-pill">{{ tag }}</span>
-                </footer>
+              <div class="metric-sub" v-if="yearStats.hotTakeDelta !== null">
+                You {{ yearStats.hotTakeYou }} · TMDB {{ yearStats.hotTakeTmdb }} ·
+                <span class="metric-delta pos">{{ yearStats.hotTakeDelta }}</span>
               </div>
+              <div class="metric-sub" v-else>—</div>
             </div>
-          </article>
+
+            <div class="metric">
+              <div class="metric-label">Personal favorite</div>
+              <div class="metric-value metric-ellipsis" :title="yearStats.favoriteTitle">
+                {{ yearStats.favoriteTitle }}
+              </div>
+
+              <div class="metric-sub" v-if="yearStats.favoriteRating !== null">
+                Your rating: {{ yearStats.favoriteRating }}/10
+              </div>
+              <div class="metric-sub" v-else>—</div>
+            </div>
+
+            <div class="metric">
+              <div class="metric-label">Rewatch</div>
+              <div class="metric-value">{{ yearStats.rewatchCount }}</div>
+              <div class="metric-sub">{{ yearStats.rewatchRate }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cards-list">
+          <ReviewCard
+            v-for="(review, index) in reviews"
+            :key="review.movieId"
+            :review="review"
+            :busy="reviewSavingId === review.movieId"
+            :ref="(cmp) => setCardRef(cmp, index)"
+            @save="handleCardSave"
+            @delete="handleDelete"
+            @toggle-rewatch="handleToggleRewatch"
+          />
         </div>
       </section>
 
@@ -47,14 +75,14 @@
         <div class="sidebar-list">
           <button
             v-for="(review, index) in reviews"
-            :key="review.id"
-            :ref="(el) => (sidebarItemRefs[index] = el)"
+            :key="review.movieId"
+            :ref="(el) => (sidebarItemRefs[index] = el as HTMLElement)"
             class="sidebar-item"
-            :class="{ active: review.id === activeReviewId }"
-            @click="scrollToReview(review.id)"
+            :class="{ active: review.movieId === activeReviewId }"
+            @click="scrollToReview(review.movieId)"
           >
             <span class="sidebar-movie-title">{{ review.title }}</span>
-            <span class="sidebar-rating">{{ review.rating.toFixed(1) }}/10</span>
+            <span class="sidebar-rating">{{ formatOneDecimal(review.user_rating) }}/10</span>
           </button>
         </div>
       </aside>
@@ -62,108 +90,322 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useCurrentUser } from 'vuefire'
+import ReviewCard from '@/components/ReviewCard.vue'
 
-const reviews = ref([
-  {
-    id: 'dune2',
-    title: 'Dune: Part Two',
-    rating: 9.1,
-    date: 'Nov 12, 2025',
-    watchedWhere: 'Theater',
-    commentary:
-      'Huge, dense, and surprisingly emotional. Sound design + visuals are insane. Paul’s arc feels way darker than in Part One.',
-    tags: ['Sci-Fi', 'Epic', 'Rewatch-worthy'],
-    posterUrl: 'https://i.ebayimg.com/images/g/epwAAOSwmutlsW7j/s-l1200.jpg',
-  },
-  {
-    id: 'spiderverse2',
-    title: 'Spider-Man: Across the Spider-Verse',
-    rating: 9.5,
-    date: 'Oct 03, 2025',
-    watchedWhere: 'Home',
-    commentary:
-      'Every frame looks like a poster. Loved how the animation style changes with each universe. Ending cliffhanger still hurts.',
-    tags: ['Animation', 'Superhero', 'Visual Feast'],
-    posterUrl: 'https://m.media-amazon.com/images/I/71q1TyEFjpL.jpg',
-  },
-  {
-    id: 'oppenheimer',
-    title: 'Oppenheimer',
-    rating: 8.8,
-    date: 'Sep 15, 2025',
-    watchedWhere: 'IMAX',
-    commentary:
-      'Very talky but never boring. Soundtrack is relentless and the final hour feels like a courtroom thriller more than a biopic.',
-    tags: ['Drama', 'History', 'Long but worth it'],
-    posterUrl: 'https://m.media-amazon.com/images/I/71qu4p5bnDL._AC_UF894,1000_QL80_.jpg',
-  },
-  {
-    id: 'pastlives',
-    title: 'Past Lives',
-    rating: 9.0,
-    date: 'Aug 28, 2025',
-    watchedWhere: 'Home',
-    commentary:
-      'Quiet, slow, and devastating. Feels like remembering a dream you almost forgot. Minimal plot, maximum feelings.',
-    tags: ['Romance', 'Indie', 'Slow Burn'],
-    posterUrl: 'https://m.media-amazon.com/images/I/512c8UEHX6L._AC_UF1000,1000_QL80_.jpg',
-  },
-  {
-    id: 'barbie',
-    title: 'Barbie',
-    rating: 8.2,
-    date: 'Jul 10, 2025',
-    watchedWhere: 'Theater',
-    commentary:
-      'Way funnier and stranger than I expected. Production design is ridiculous. Ken absolutely steals the third act.',
-    tags: ['Comedy', 'Meta', 'Vibes'],
-    posterUrl: 'https://i.ebayimg.com/images/g/2NUAAOSw0LVkligx/s-l1200.jpg',
-  },
-])
+import {
+  getAllUserReviews,
+  getUserMovieReviews,
+  tmdbImageURL,
+  addUserReview,
+  removeUserReview,
+  type UserReview,
+} from '@/movies'
 
-const cardRefs = ref([])
-const sidebarItemRefs = ref([])
-const activeReviewId = ref(reviews.value[0]?.id ?? null)
+type ReviewCardData = {
+  movieId: number
+  title: string
+  tagline: string | null
+  release_date: string
+  runtime: number | null
+  poster_path: string | null
+  rating_avg: number
+  rating_count: number
+  budget: number | null
+  genresText: string
+
+  user_rating: number
+  user_thoughts: string
+  draft?: boolean
+
+  rewatch?: boolean
+  posterUrl?: string | null
+}
+
+const currentUser = useCurrentUser()
+const userId = computed(() => currentUser.value?.uid ?? null)
+
+const reviews = ref<ReviewCardData[]>([])
+const loading = ref(false)
+const loadError = ref<string | null>(null)
+
+const cardRefs = ref<HTMLElement[]>([])
+const sidebarItemRefs = ref<HTMLElement[]>([])
+const activeReviewId = ref<number | null>(null)
+
 const navOffset = ref(90)
 const isJumping = ref(false)
 
-const measureNavHeight = () => {
-  const nav =
-    document.querySelector('nav') ||
-    document.querySelector('header') ||
-    document.querySelector('.navbar')
+const reviewSavingId = ref<number | null>(null)
+const currentYear = new Date().getFullYear()
 
-  if (nav) {
-    navOffset.value = nav.getBoundingClientRect().height
+function setCardRef(cmp: unknown, index: number) {
+  const el = (cmp as { $el?: HTMLElement })?.$el
+  if (el) cardRefs.value[index] = el
+}
+
+function formatOneDecimal(n: number | null | undefined) {
+  if (n === null || n === undefined || Number.isNaN(n)) return '—'
+  return n.toFixed(1)
+}
+
+function deltaValue(r: ReviewCardData) {
+  if (r.user_rating === null || r.user_rating === undefined) return null
+  if (r.rating_avg === null || r.rating_avg === undefined) return null
+  return r.user_rating - r.rating_avg
+}
+
+const yearStats = computed(() => {
+  const list = reviews.value.filter((r) => !r.draft)
+
+  let hotTake: ReviewCardData | null = null
+  let hotDelta = -Infinity
+  for (const r of list) {
+    const d = deltaValue(r)
+    if (d === null) continue
+    if (d > 0 && d > hotDelta) {
+      hotDelta = d
+      hotTake = r
+    }
+  }
+  const hotTakeDelta = hotTake && hotDelta !== -Infinity ? `+${hotDelta.toFixed(1)}` : null
+
+  let favorite: ReviewCardData | null = null
+  let bestRating = -Infinity
+  for (const r of list) {
+    if (r.user_rating === null || r.user_rating === undefined) continue
+    if (r.user_rating > bestRating) {
+      bestRating = r.user_rating
+      favorite = r
+    }
+  }
+
+  const rewatchCount = list.filter((r) => !!r.rewatch).length
+  const rewatchRate =
+    list.length > 0 ? `${Math.round((rewatchCount / list.length) * 100)}% rewatch` : '—'
+
+  return {
+    hotTakeTitle: hotTake?.title ?? '—',
+    hotTakeDelta,
+    hotTakeYou:
+      hotTake?.user_rating !== null && hotTake?.user_rating !== undefined
+        ? hotTake.user_rating.toFixed(1)
+        : '—',
+    hotTakeTmdb: hotTake ? formatOneDecimal(hotTake.rating_avg) : '—',
+
+    favoriteTitle: favorite?.title ?? '—',
+    favoriteRating:
+      favorite?.user_rating !== null && favorite?.user_rating !== undefined
+        ? favorite.user_rating.toFixed(1)
+        : null,
+
+    rewatchCount,
+    rewatchRate,
+  }
+})
+
+/** ✅ Save from inline card editor */
+async function handleCardSave(payload: {
+  movieId: number
+  rating: number | null
+  thoughts: string | null
+}) {
+  if (!userId.value) return
+
+  const { movieId, rating, thoughts } = payload
+  reviewSavingId.value = movieId
+
+  try {
+    const existing = reviews.value.find((r) => r.movieId === movieId)
+    const rewatch = existing?.rewatch ?? false
+
+    const docPayload: UserReview = {
+      rating: rating ?? 0,
+      comment: thoughts ?? '',
+      draft: false,
+      rewatch,
+    }
+
+    await addUserReview(userId.value, movieId, docPayload)
+
+    reviews.value = reviews.value.map((r) =>
+      r.movieId === movieId
+        ? { ...r, user_rating: rating ?? 0, user_thoughts: thoughts ?? '' }
+        : r,
+    )
+  } catch (e) {
+    console.error(e)
+  } finally {
+    reviewSavingId.value = null
   }
 }
 
-const scrollToReview = (id) => {
-  const index = reviews.value.findIndex((r) => r.id === id)
+async function handleToggleRewatch(payload: unknown) {
+  const r = payload as ReviewCardData
+  if (!userId.value) return
+
+  const movieId = r.movieId
+  const next = !r.rewatch
+
+  reviews.value = reviews.value.map((x) => (x.movieId === movieId ? { ...x, rewatch: next } : x))
+
+  reviewSavingId.value = movieId
+  try {
+    const updated = reviews.value.find((x) => x.movieId === movieId)
+
+    const docPayload: UserReview = {
+      rating: updated?.user_rating ?? 0,
+      comment: updated?.user_thoughts ?? '',
+      draft: false,
+      rewatch: next,
+    }
+
+    await addUserReview(userId.value, movieId, docPayload)
+  } catch (e) {
+    console.error(e)
+    reviews.value = reviews.value.map((x) => (x.movieId === movieId ? { ...x, rewatch: !next } : x))
+  } finally {
+    reviewSavingId.value = null
+  }
+}
+
+async function handleDelete(payload: unknown) {
+  const r = payload as ReviewCardData
+  if (!userId.value) return
+  const ok = window.confirm(`Delete your review for "${r.title}"?`)
+  if (!ok) return
+
+  reviewSavingId.value = r.movieId
+  try {
+    await removeUserReview(userId.value, r.movieId)
+    reviews.value = reviews.value.filter((x) => x.movieId !== r.movieId)
+    cardRefs.value = []
+    sidebarItemRefs.value = []
+    if (activeReviewId.value === r.movieId) {
+      activeReviewId.value = reviews.value[0]?.movieId ?? null
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    reviewSavingId.value = null
+  }
+}
+
+async function loadHomeReviews(uid: string) {
+  loading.value = true
+  loadError.value = null
+
+  try {
+    const reviewMap = await getAllUserReviews(uid)
+    const movieIds = Object.keys(reviewMap)
+      .map((id) => parseInt(id))
+      .filter((n) => !Number.isNaN(n))
+
+    if (movieIds.length === 0) {
+      reviews.value = []
+      activeReviewId.value = null
+      return
+    }
+
+    const joined = await getUserMovieReviews(uid, movieIds)
+
+    const cards: ReviewCardData[] = []
+
+    for (let idx = 0; idx < joined.length; idx++) {
+      const item = joined[idx]
+      if (!item) continue
+
+      const movieId = movieIds[idx]
+      if (movieId === undefined) continue
+
+      const posterUrl = item.poster_path ? tmdbImageURL(item.poster_path) : null
+      const genresText = item.genres ? Object.values(item.genres).join(', ') : ''
+
+      // Type assertion to access rewatch property
+      const itemWithRewatch = item as typeof item & { rewatch?: boolean }
+
+      const card: ReviewCardData = {
+        movieId,
+        tagline: item.tagline ?? null,
+        title: item.title,
+        release_date: item.release_date,
+        runtime: item.runtime ?? null,
+        poster_path: item.poster_path ?? null,
+        rating_avg: item.rating_avg,
+        rating_count: item.rating_count,
+        budget: item.budget && item.budget > 0 ? item.budget : null,
+        genresText,
+
+        user_rating: item.rating,
+        user_thoughts: item.comment,
+        draft: item.draft ?? false,
+
+        rewatch: itemWithRewatch.rewatch ?? false,
+
+        posterUrl,
+      }
+
+      if (!card.draft) {
+        cards.push(card)
+      }
+    }
+
+    reviews.value = cards
+    cardRefs.value = []
+    sidebarItemRefs.value = []
+    activeReviewId.value = reviews.value[0]?.movieId ?? null
+  } catch (err) {
+    console.error(err)
+    loadError.value = 'Failed to load your reviews (check Firestore rules + login).'
+    reviews.value = []
+    activeReviewId.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(
+  userId,
+  (uid) => {
+    if (!uid) {
+      reviews.value = []
+      activeReviewId.value = null
+      loadError.value = null
+      loading.value = false
+      return
+    }
+    loadHomeReviews(uid)
+  },
+  { immediate: true },
+)
+
+const measureNavHeight = () => {
+  const nav =
+    document.querySelector('header') ||
+    document.querySelector('nav') ||
+    document.querySelector('.navbar')
+  if (nav) navOffset.value = nav.getBoundingClientRect().height
+}
+
+const scrollToReview = (movieId: number) => {
+  const index = reviews.value.findIndex((r) => r.movieId === movieId)
   if (index === -1) return
 
   const el = cardRefs.value[index]
-  if (!el || !el.scrollIntoView) return
+  if (!el?.scrollIntoView) return
 
-  activeReviewId.value = id
+  activeReviewId.value = movieId
   isJumping.value = true
-
-  el.scrollIntoView({
-    behavior: 'smooth',
-    block: 'start',
-  })
-
-  setTimeout(() => {
-    isJumping.value = false
-  }, 600)
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  setTimeout(() => (isJumping.value = false), 600)
 }
 
 const handleScroll = () => {
   if (isJumping.value) return
-
   const offset = navOffset.value + 16
+
   let closestId = activeReviewId.value
   let minDist = Infinity
   let closestIndex = -1
@@ -171,288 +413,30 @@ const handleScroll = () => {
   cardRefs.value.forEach((el, index) => {
     if (!el) return
     const rect = el.getBoundingClientRect()
-    const cardTopRelative = rect.top - offset
-    const dist = Math.abs(cardTopRelative)
-
+    const dist = Math.abs(rect.top - offset)
     if (dist < minDist) {
       minDist = dist
       closestIndex = index
-      closestId = reviews.value[index].id
+      closestId = reviews.value[index]?.movieId ?? null
     }
   })
 
-  if (closestIndex !== -1) {
+  if (closestIndex !== -1 && closestId !== null) {
     activeReviewId.value = closestId
-    const sideEl = sidebarItemRefs.value[closestIndex]
-    if (sideEl && sideEl.scrollIntoView) {
-      sideEl.scrollIntoView({ block: 'nearest' })
-    }
+    sidebarItemRefs.value[closestIndex]?.scrollIntoView?.({ block: 'nearest' })
   }
 }
 
 onMounted(() => {
   measureNavHeight()
   window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('resize', measureNavHeight, { passive: true })
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', measureNavHeight)
 })
 </script>
 
-<style scoped>
-.home-page {
-  min-height: 100vh;
-  padding: 7.5rem 1.75rem 3rem;
-  background: radial-gradient(circle at top left, #f6f7ff 0, #eef1f7 40%, #e5e9f0 100%);
-  box-sizing: border-box;
-}
-
-.home-inner {
-  max-width: 1320px;
-  margin: 0 auto;
-  display: flex;
-  gap: 2.5rem;
-  align-items: flex-start;
-}
-
-.cards-column {
-  flex: 1 1 auto;
-}
-
-.section-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
-  color: #111827;
-}
-
-.section-subtitle {
-  font-size: 0.95rem;
-  color: #6b7280;
-  margin-bottom: 1.5rem;
-}
-
-.cards-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.review-card {
-  background: #ffffff;
-  border-radius: 1.2rem;
-  padding: 0.9rem 1.1rem;
-  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  max-width: 880px;
-  margin-right: auto;
-  min-height: 190px;
-  overflow: hidden;
-  scroll-margin-top: 200px;
-}
-
-.card-inner {
-  display: flex;
-  gap: 1rem;
-}
-
-.poster-wrapper {
-  flex: 0 0 150px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.poster-img {
-  width: 150px;
-  height: 210px;
-  border-radius: 0.9rem;
-  object-fit: cover;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.4);
-}
-
-.card-content {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.review-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.4rem;
-}
-
-.movie-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #111827;
-}
-
-.meta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
-  font-size: 0.8rem;
-  color: #6b7280;
-}
-
-.rating-chip {
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #f97316, #facc15);
-  color: #111827;
-  font-weight: 600;
-}
-
-.meta-item {
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  background: rgba(148, 163, 184, 0.15);
-}
-
-.review-body {
-  margin: 0.35rem 0 0.7rem;
-  font-size: 0.96rem;
-  line-height: 1.5;
-  color: #374151;
-}
-
-.tag-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: auto;
-}
-
-.tag-pill {
-  font-size: 0.75rem;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  background: rgba(59, 130, 246, 0.07);
-  color: #2563eb;
-}
-
-.sidebar {
-  width: 270px;
-  max-width: 30%;
-  background: linear-gradient(180deg, rgba(79, 70, 229, 0.05), rgba(236, 72, 153, 0.06));
-  border-radius: 1.1rem;
-  padding: 1.1rem 1rem;
-  border: 1px solid rgba(129, 140, 248, 0.4);
-  box-shadow: 0 14px 30px rgba(129, 140, 248, 0.25);
-  position: sticky;
-  top: 110px;
-  max-height: calc(100vh - 140px);
-  display: flex;
-  flex-direction: column;
-  margin-left: auto;
-}
-
-.sidebar-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #111827;
-}
-
-.sidebar-subtitle {
-  font-size: 0.8rem;
-  color: #4b5563;
-  margin-top: 0.1rem;
-}
-
-.sidebar-list {
-  margin-top: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  overflow-y: auto;
-  padding-right: 0.35rem;
-}
-
-.sidebar-list::-webkit-scrollbar {
-  width: 6px;
-}
-.sidebar-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-.sidebar-list::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.2);
-  border-radius: 999px;
-}
-
-.sidebar-item {
-  border: none;
-  border-radius: 0.8rem;
-  padding: 0.4rem 0.55rem;
-  background: rgba(255, 255, 255, 0.85);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.4rem;
-  cursor: pointer;
-  font-size: 0.82rem;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    background 0.12s ease,
-    color 0.12s ease;
-}
-
-.sidebar-item:hover {
-  background: #ffffff;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
-  transform: translateY(-1px);
-}
-
-.sidebar-item.active {
-  background: #4f46e5;
-  color: #f9fafb;
-  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.5);
-}
-
-.sidebar-item.active .sidebar-rating {
-  color: #fde68a;
-}
-
-.sidebar-movie-title {
-  font-weight: 500;
-  text-align: left;
-}
-
-.sidebar-rating {
-  font-weight: 600;
-  font-size: 0.75rem;
-  color: #7e22ce;
-}
-
-@media (max-width: 900px) {
-  .home-inner {
-    flex-direction: column;
-  }
-
-  .review-card {
-    max-width: 100%;
-  }
-
-  .sidebar {
-    position: static;
-    width: 100%;
-    max-width: 100%;
-    max-height: none;
-    margin-top: 1rem;
-  }
-
-  .poster-wrapper {
-    flex: 0 0 120px;
-  }
-
-  .poster-img {
-    width: 120px;
-    height: 180px;
-  }
-}
-</style>
+<style scoped src="@/styles/homepage.css"></style>
