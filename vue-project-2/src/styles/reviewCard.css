@@ -157,7 +157,9 @@
   padding: 0.22rem 0.55rem;
   border-radius: 999px;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .icon-btn:hover {
@@ -265,7 +267,10 @@
   font-weight: 850;
   font-size: 0.78rem;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background 0.12s ease;
 }
 
 .rewatch-toggle .rewatch-dot {
@@ -336,8 +341,6 @@
   max-width: 380px;
 }
 
-
-
 .expand-btn {
   display: none;
   border: 1px solid rgba(148, 163, 184, 0.35);
@@ -376,7 +379,6 @@
 }
 
 @media (max-width: 640px) {
-
   .card-grid {
     grid-template-columns: 84px 1fr;
     gap: 0.7rem;
@@ -392,35 +394,30 @@
     font-size: 1rem;
   }
 
-
   .expand-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }
 
-
   .desktop-only {
     display: none !important;
   }
-
 
   .mobile-details {
     display: none;
   }
 
-
   .review-card.expanded .mobile-details {
     display: block;
   }
 
-
   .global-rating {
-    display: none; 
+    display: none;
   }
 
   .rewatch-toggle {
-    display: none; 
+    display: none;
   }
 
   .card-main > .bottom-row {

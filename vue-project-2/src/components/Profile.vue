@@ -11,7 +11,6 @@ import { GetUserQrCode } from '@/qrcodes'
 
 const router = useRouter()
 
-
 const qrCodeValue = ref('')
 const qrDataUrl = ref('')
 
@@ -69,7 +68,7 @@ function navigateToDraft(movieId: string, rating?: number, comment?: string) {
   })
 }
 
-  onMounted(() => {
+onMounted(() => {
   if (user.value) {
     genQrCode(user.value.uid)
   }
@@ -83,9 +82,9 @@ watch(
       await calculateStats(newUser.uid)
       await fetchDraftReviews(newUser.uid)
     }
-  },  { immediate: true }, )
-
-
+  },
+  { immediate: true },
+)
 
 async function calculateStats(userId: string) {
   isLoadingStats.value = true
@@ -415,5 +414,4 @@ function closeMoviesList() {
   </div>
 </template>
 
-<style scoped src="@/styles/profile.css">
-</style>
+<style scoped src="@/styles/profile.css"></style>

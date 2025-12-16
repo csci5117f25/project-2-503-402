@@ -1,10 +1,5 @@
-import {
-  doc,
-  getDoc,
-  setDoc
-} from 'firebase/firestore'
-import { db } from './firebase_conf';
-
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from './firebase_conf'
 
 export interface UserQrCodeDoc {
   value: string
@@ -12,11 +7,11 @@ export interface UserQrCodeDoc {
 
 export async function GetUserQrCode(userId: string) {
   const UserqrCodeDoc = doc(db, 'qrcodes', userId)
-  const qrCodeRef =  await getDoc(UserqrCodeDoc)
-  if (!(qrCodeRef).exists()) {
+  const qrCodeRef = await getDoc(UserqrCodeDoc)
+  if (!qrCodeRef.exists()) {
     // so create one using the userId as the QR code value and return it
     const newQrCode: UserQrCodeDoc = {
-      value: userId
+      value: userId,
     }
 
     await setDoc(UserqrCodeDoc, newQrCode)
@@ -24,5 +19,4 @@ export async function GetUserQrCode(userId: string) {
   }
 
   return qrCodeRef.data() as UserQrCodeDoc
-
 }

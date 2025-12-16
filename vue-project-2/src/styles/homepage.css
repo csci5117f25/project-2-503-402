@@ -341,7 +341,6 @@
   }
 }
 
-
 @media (max-width: 640px) {
   .home-page {
     padding: 11.5rem 1rem 2.25rem;
@@ -372,7 +371,7 @@
   }
 
   .year-metrics {
-    grid-template-columns: 1fr; 
+    grid-template-columns: 1fr;
     gap: 0.6rem;
   }
 
@@ -389,7 +388,7 @@
 
   .sidebar-list {
     max-height: none !important;
-    overflow: visible !important; 
+    overflow: visible !important;
     -webkit-overflow-scrolling: auto;
   }
 
@@ -400,4 +399,3 @@
     white-space: nowrap;
   }
 }
-

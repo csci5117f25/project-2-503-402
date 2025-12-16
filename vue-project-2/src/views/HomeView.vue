@@ -230,9 +230,7 @@ async function handleCardSave(payload: {
     await addUserReview(userId.value, movieId, docPayload)
 
     reviews.value = reviews.value.map((r) =>
-      r.movieId === movieId
-        ? { ...r, user_rating: rating ?? 0, user_thoughts: thoughts ?? '' }
-        : r,
+      r.movieId === movieId ? { ...r, user_rating: rating ?? 0, user_thoughts: thoughts ?? '' } : r,
     )
   } catch (e) {
     console.error(e)
@@ -432,8 +430,6 @@ onMounted(() => {
   window.addEventListener('resize', measureNavHeight, { passive: true })
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
 })
-
-
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleScroll)

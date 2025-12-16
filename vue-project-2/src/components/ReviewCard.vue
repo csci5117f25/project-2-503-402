@@ -49,7 +49,13 @@
                 Edit
               </button>
 
-              <button v-else type="button" class="icon-btn" @click.stop="cancelEdit" :disabled="busy">
+              <button
+                v-else
+                type="button"
+                class="icon-btn"
+                @click.stop="cancelEdit"
+                :disabled="busy"
+              >
                 Cancel
               </button>
 
@@ -165,7 +171,11 @@
                 </span>
               </span>
 
-              <span v-if="review.genresText" class="fact-pill genres-pill" :title="review.genresText">
+              <span
+                v-if="review.genresText"
+                class="fact-pill genres-pill"
+                :title="review.genresText"
+              >
                 {{ review.genresText }}
               </span>
             </div>
@@ -256,7 +266,9 @@ function cancelEdit() {
 
 function saveEdit() {
   const rating =
-    editRating.value === null || Number.isNaN(editRating.value) ? null : Math.round(editRating.value)
+    editRating.value === null || Number.isNaN(editRating.value)
+      ? null
+      : Math.round(editRating.value)
   const thoughts = editThoughts.value?.trim() ? editThoughts.value.trim() : null
 
   emit('save', { movieId: review.value.movieId, rating, thoughts })

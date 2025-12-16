@@ -2,7 +2,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-
 const defaultConstraintOptions = [
   { label: 'rear camera', constraints: { facingMode: 'environment' } },
   { label: 'front camera', constraints: { facingMode: 'user' } },
@@ -16,8 +15,7 @@ const paused = ref(false)
 const camera_ready = ref(false)
 
 function handleSubmit() {
-
-  router.push({ name: 'report', params: { id: result?.value} })
+  router.push({ name: 'report', params: { id: result?.value } })
 }
 
 function onDetect(detectedCodes) {
@@ -94,7 +92,6 @@ function onError(err) {
 <template>
   <div class="qr-body">
     <div class="qr-text">
-
       <div v-if="result">
         <p class="decode-result">
           Last result: <b>{{ result }}</b>
