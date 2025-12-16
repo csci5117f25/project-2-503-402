@@ -3,7 +3,6 @@
     <div class="home-inner">
       <section class="cards-column">
         <h2 class="section-title">Your Reviews</h2>
-        <p class="section-subtitle">Scroll through the movies you&apos;ve logged.</p>
 
         <div v-if="!userId" class="empty-state">Please sign in to see your reviews.</div>
         <div v-else-if="loading" class="empty-state">Loading your reviews…</div>
@@ -11,7 +10,7 @@
           {{ loadError }}
         </div>
         <div v-else-if="reviews.length === 0" class="empty-state">
-          No reviews yet — add one in the Form.
+          No reviews yet
         </div>
 
         <div v-else class="year-card">
@@ -54,9 +53,29 @@
           </div>
         </div>
 
+        <div v-if="totalPages > 1" class="pager">
+          <button class="pager-btn" :disabled="page === 1" @click="setPage(page - 1)">Prev</button>
+
+          <button
+            v-for="p in pageButtons"
+            :key="p"
+            class="pager-btn"
+            :class="{ active: p === page }"
+            @click="setPage(p)"
+          >
+            {{ p }}
+          </button>
+
+          <button class="pager-btn" :disabled="page === totalPages" @click="setPage(page + 1)">
+            Next
+          </button>
+
+          <div class="pager-meta">Page {{ page }} / {{ totalPages }} · {{ reviews.length }} movies total</div>
+        </div>
+
         <div class="cards-list">
           <ReviewCard
-            v-for="(review, index) in reviews"
+            v-for="(review, index) in pagedReviews"
             :key="review.movieId"
             :review="review"
             :busy="reviewSavingId === review.movieId"
@@ -66,6 +85,26 @@
             @toggle-rewatch="handleToggleRewatch"
           />
         </div>
+
+        <div v-if="totalPages > 1" class="pager pager-bottom">
+          <button class="pager-btn" :disabled="page === 1" @click="setPage(page - 1)">Prev</button>
+
+          <button
+            v-for="p in pageButtons"
+            :key="p"
+            class="pager-btn"
+            :class="{ active: p === page }"
+            @click="setPage(p)"
+          >
+            {{ p }}
+          </button>
+
+          <button class="pager-btn" :disabled="page === totalPages" @click="setPage(page + 1)">
+            Next
+          </button>
+
+          <div class="pager-meta">Page {{ page }} / {{ totalPages }} · {{ reviews.length }} total</div>
+        </div>
       </section>
 
       <aside class="sidebar">
@@ -74,9 +113,9 @@
 
         <div class="sidebar-list">
           <button
-            v-for="(review, index) in reviews"
+            v-for="(review, index) in pagedReviews"
             :key="review.movieId"
-            :ref="(el) => (sidebarItemRefs[index] = el as HTMLElement)"
+            :ref="(el) => setSidebarItemRef(el, index)"
             class="sidebar-item"
             :class="{ active: review.movieId === activeReviewId }"
             @click="scrollToReview(review.movieId)"
@@ -119,7 +158,6 @@ type ReviewCardData = {
   user_rating: number
   user_thoughts: string
   draft?: boolean
-
   rewatch?: boolean
   posterUrl?: string | null
 }
@@ -146,6 +184,10 @@ function setCardRef(cmp: unknown, index: number) {
   if (el) cardRefs.value[index] = el
 }
 
+function setSidebarItemRef(el: Element | null, index: number) {
+  if (el) sidebarItemRefs.value[index] = el as HTMLElement
+}
+
 function formatOneDecimal(n: number | null | undefined) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—'
   return n.toFixed(1)
@@ -156,6 +198,53 @@ function deltaValue(r: ReviewCardData) {
   if (r.rating_avg === null || r.rating_avg === undefined) return null
   return r.user_rating - r.rating_avg
 }
+
+
+const page = ref(1)
+const pageSize = ref(10)
+
+const totalPages = computed(() => Math.max(1, Math.ceil(reviews.value.length / pageSize.value)))
+
+const pagedReviews = computed(() => {
+  const start = (page.value - 1) * pageSize.value
+  return reviews.value.slice(start, start + pageSize.value)
+})
+
+watch([reviews, pageSize], () => {
+  if (page.value > totalPages.value) page.value = totalPages.value
+  if (page.value < 1) page.value = 1
+})
+
+const pageButtons = computed(() => {
+  const maxButtons = 7
+  const tp = totalPages.value
+  if (tp <= maxButtons) return Array.from({ length: tp }, (_, i) => i + 1)
+
+  const buttons: number[] = []
+  const left = Math.max(1, page.value - 2)
+  const right = Math.min(tp, page.value + 2)
+
+  buttons.push(1)
+  for (let p = left; p <= right; p++) {
+    if (p !== 1 && p !== tp) buttons.push(p)
+  }
+  if (tp !== 1) buttons.push(tp)
+
+  return Array.from(new Set(buttons)).sort((a, b) => a - b)
+})
+
+function setPage(p: number) {
+  const next = Math.min(Math.max(1, p), totalPages.value)
+  if (next === page.value) return
+
+  page.value = next
+  cardRefs.value = []
+  sidebarItemRefs.value = []
+  activeReviewId.value = pagedReviews.value[0]?.movieId ?? null
+
+  window.scrollTo({ top: navOffset.value + 20, left: 0, behavior: 'smooth' })
+}
+
 
 const yearStats = computed(() => {
   const list = reviews.value.filter((r) => !r.draft)
@@ -206,11 +295,7 @@ const yearStats = computed(() => {
   }
 })
 
-async function handleCardSave(payload: {
-  movieId: number
-  rating: number | null
-  thoughts: string | null
-}) {
+async function handleCardSave(payload: { movieId: number; rating: number | null; thoughts: string | null }) {
   if (!userId.value) return
 
   const { movieId, rating, thoughts } = payload
@@ -278,11 +363,12 @@ async function handleDelete(payload: unknown) {
   try {
     await removeUserReview(userId.value, r.movieId)
     reviews.value = reviews.value.filter((x) => x.movieId !== r.movieId)
+
+    if (page.value > totalPages.value) page.value = totalPages.value
+
     cardRefs.value = []
     sidebarItemRefs.value = []
-    if (activeReviewId.value === r.movieId) {
-      activeReviewId.value = reviews.value[0]?.movieId ?? null
-    }
+    activeReviewId.value = pagedReviews.value[0]?.movieId ?? null
   } catch (e) {
     console.error(e)
   } finally {
@@ -303,6 +389,7 @@ async function loadHomeReviews(uid: string) {
     if (movieIds.length === 0) {
       reviews.value = []
       activeReviewId.value = null
+      page.value = 1
       return
     }
 
@@ -320,7 +407,6 @@ async function loadHomeReviews(uid: string) {
       const posterUrl = item.poster_path ? tmdbImageURL(item.poster_path) : null
       const genresText = item.genres ? Object.values(item.genres).join(', ') : ''
 
-      // Type assertion to access rewatch property
       const itemWithRewatch = item as typeof item & { rewatch?: boolean }
 
       const card: ReviewCardData = {
@@ -338,26 +424,24 @@ async function loadHomeReviews(uid: string) {
         user_rating: item.rating,
         user_thoughts: item.comment,
         draft: item.draft ?? false,
-
         rewatch: itemWithRewatch.rewatch ?? false,
-
         posterUrl,
       }
 
-      if (!card.draft) {
-        cards.push(card)
-      }
+      if (!card.draft) cards.push(card)
     }
 
     reviews.value = cards
+    page.value = 1
     cardRefs.value = []
     sidebarItemRefs.value = []
-    activeReviewId.value = reviews.value[0]?.movieId ?? null
+    activeReviewId.value = pagedReviews.value[0]?.movieId ?? null
   } catch (err) {
     console.error(err)
     loadError.value = 'Failed to load your reviews (check Firestore rules + login).'
     reviews.value = []
     activeReviewId.value = null
+    page.value = 1
   } finally {
     loading.value = false
   }
@@ -371,6 +455,7 @@ watch(
       activeReviewId.value = null
       loadError.value = null
       loading.value = false
+      page.value = 1
       return
     }
     loadHomeReviews(uid)
@@ -387,7 +472,7 @@ const measureNavHeight = () => {
 }
 
 const scrollToReview = (movieId: number) => {
-  const index = reviews.value.findIndex((r) => r.movieId === movieId)
+  const index = pagedReviews.value.findIndex((r) => r.movieId === movieId)
   if (index === -1) return
 
   const el = cardRefs.value[index]
@@ -414,7 +499,7 @@ const handleScroll = () => {
     if (dist < minDist) {
       minDist = dist
       closestIndex = index
-      closestId = reviews.value[index]?.movieId ?? null
+      closestId = pagedReviews.value[index]?.movieId ?? null
     }
   })
 

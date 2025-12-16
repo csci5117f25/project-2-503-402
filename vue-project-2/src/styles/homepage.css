@@ -399,3 +399,52 @@
     white-space: nowrap;
   }
 }
+
+.pager {
+  max-width: 920px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.8rem 0 1rem;
+}
+
+.pager-bottom {
+  margin-top: 1rem;
+}
+
+.pager-btn {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.9);
+  color: #111827;
+  font-weight: 850;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.8rem;
+  cursor: pointer;
+}
+
+.pager-btn.active {
+  background: #111827;
+  color: #f9fafb;
+  border-color: rgba(17, 24, 39, 0.65);
+}
+
+.pager-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pager-meta {
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .pager-meta {
+    width: 100%;
+    margin-left: 0;
+  }
+}
