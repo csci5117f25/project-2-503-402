@@ -30,9 +30,36 @@
             </div>
 
             <div class="card-actions">
-              <button type="button" class="icon-btn" @click="$emit('edit', review)" :disabled="busy">
+              <button
+                v-if="!isEditing"
+                type="button"
+                class="icon-btn"
+                @click="startEdit"
+                :disabled="busy"
+              >
                 Edit
               </button>
+
+              <button
+                v-else
+                type="button"
+                class="icon-btn"
+                @click="cancelEdit"
+                :disabled="busy"
+              >
+                Cancel
+              </button>
+
+              <button
+                v-if="isEditing"
+                type="button"
+                class="icon-btn primary"
+                @click="saveEdit"
+                :disabled="busy"
+              >
+                Save
+              </button>
+
               <button
                 type="button"
                 class="icon-btn danger"
@@ -49,7 +76,8 @@
           <div class="user-rating">
             <span class="label">You rated</span>
 
-            <div class="rating-line">
+            <!-- VIEW MODE -->
+            <div v-if="!isEditing" class="rating-line">
               <span class="chip"> ⭐ {{ formatOneDecimal(review.user_rating) }}/10 </span>
 
               <span
@@ -60,6 +88,21 @@
               >
                 {{ deltaText(review) }}
               </span>
+            </div>
+
+            <!-- EDIT MODE -->
+            <div v-else class="edit-rating-line">
+              <input
+                class="edit-rating"
+                type="number"
+                min="0"
+                max="10"
+                step="1"
+                inputmode="numeric"
+                v-model.number="editRating"
+                :disabled="busy"
+              />
+              <span class="edit-outof">/10</span>
             </div>
 
             <button
@@ -77,9 +120,20 @@
 
           <div class="user-thoughts">
             <span class="label">Your thoughts</span>
-            <p class="thoughts-text">
+
+            <!-- VIEW MODE -->
+            <p v-if="!isEditing" class="thoughts-text">
               {{ review.user_thoughts || '—' }}
             </p>
+
+            <!-- EDIT MODE -->
+            <textarea
+              v-else
+              class="edit-thoughts"
+              rows="4"
+              v-model="editThoughts"
+              :disabled="busy"
+            ></textarea>
           </div>
         </div>
 
@@ -106,6 +160,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch, toRefs } from 'vue'
+
 type ReviewCard = {
   movieId: number
   title: string
@@ -127,11 +183,51 @@ const props = defineProps<{
   busy?: boolean
 }>()
 
-defineEmits<{
-  (e: 'edit', r: ReviewCard): void
+const { review, busy } = toRefs(props)
+
+const emit = defineEmits<{
   (e: 'delete', r: ReviewCard): void
   (e: 'toggle-rewatch', r: ReviewCard): void
+  (e: 'save', payload: { movieId: number; rating: number | null; thoughts: string | null }): void
 }>()
+
+const isEditing = ref(false)
+const editRating = ref<number | null>(review.value.user_rating ?? null)
+const editThoughts = ref<string>(review.value.user_thoughts ?? '')
+
+    
+watch(
+  () => review.value,
+  (r) => {
+    if (!isEditing.value) {
+      editRating.value = r.user_rating ?? null
+      editThoughts.value = r.user_thoughts ?? ''
+    }
+  },
+  { deep: true },
+)
+
+function startEdit() {
+  isEditing.value = true
+  editRating.value = review.value.user_rating ?? null
+  editThoughts.value = review.value.user_thoughts ?? ''
+}
+
+function cancelEdit() {
+  isEditing.value = false
+  editRating.value = review.value.user_rating ?? null
+  editThoughts.value = review.value.user_thoughts ?? ''
+}
+
+function saveEdit() {
+  const rating =
+    editRating.value === null || Number.isNaN(editRating.value) ? null : editRating.value
+
+  const thoughts = editThoughts.value?.trim() ? editThoughts.value.trim() : null
+
+  emit('save', { movieId: review.value.movieId, rating, thoughts })
+  isEditing.value = false
+}
 
 function formatOneDecimal(n: number | null | undefined) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—'
@@ -181,4 +277,3 @@ function deltaClass(r: ReviewCard) {
 </script>
 
 <style scoped src="@/styles/reviewCard.css"></style>
-
