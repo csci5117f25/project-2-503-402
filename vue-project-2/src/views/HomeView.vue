@@ -16,8 +16,8 @@
 
         <div v-else class="year-card">
           <div class="year-card-top">
-            <div class="year-title">This year in movies</div>
-            <div class="year-subtitle">{{ currentYear }} so far</div>
+            <div class="year-title">Your Film Year Summary</div>
+            <div class="year-subtitle">Year - {{ currentYear }}</div>
           </div>
 
           <div class="year-metrics">
@@ -41,14 +41,14 @@
               </div>
 
               <div class="metric-sub" v-if="yearStats.favoriteRating !== null">
-                Your rating: {{ yearStats.favoriteRating }}/10
+                Your rating: {{ Math.round(yearStats.favoriteRating) }}/10
               </div>
               <div class="metric-sub" v-else>—</div>
             </div>
 
             <div class="metric">
-              <div class="metric-label">Rewatch</div>
-              <div class="metric-value">{{ yearStats.rewatchCount }}</div>
+              <div class="metric-label">Rewatch Value</div>
+              <div class="metric-value">{{ yearStats.rewatchCount }} movies</div>
               <div class="metric-sub">{{ yearStats.rewatchRate }}</div>
             </div>
           </div>
