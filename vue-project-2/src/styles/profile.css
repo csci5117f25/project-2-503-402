@@ -787,10 +787,6 @@
   }
 }
 
-/* ========================================
-   SMALL MOBILE (≤480px)
-   ======================================== */
-
 @media (max-width: 480px) {
   .profile-container {
     padding: 4.5rem 1rem 2.5rem 1rem;
