@@ -184,9 +184,14 @@ function setCardRef(cmp: unknown, index: number) {
   if (el) cardRefs.value[index] = el
 }
 
-function setSidebarItemRef(el: Element | null, index: number) {
-  if (el) sidebarItemRefs.value[index] = el as HTMLElement
+function setSidebarItemRef(el: unknown, index: number) {
+  const node = (el as { $el?: unknown } | null)?.$el ?? el
+
+  if (node instanceof HTMLElement) {
+    sidebarItemRefs.value[index] = node
+  }
 }
+
 
 function formatOneDecimal(n: number | null | undefined) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—'
