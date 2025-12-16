@@ -6,7 +6,7 @@ import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
 import { Film, BarChart3, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
-  import VueQrcode from 'vue-qrcode'
+import VueQrcode from 'vue-qrcode'
 import { GetUserQrCode } from '@/qrcodes'
 
 const router = useRouter()
