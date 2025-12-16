@@ -305,22 +305,22 @@ function closeMoviesList() {
               {{ user.displayName?.[0]?.toUpperCase() || 'U' }}
             </div>
           </div>
+
+          <div class="profile-info">
+            <h1 class="user-name">{{ user.displayName }}</h1>
+            <p class="user-email">{{ user.email }}</p>
+          </div>
         </div>
 
-        <div class="profile-info">
-          <h1 class="user-name">{{ user.displayName }}</h1>
-          <p class="user-email">{{ user.email }}</p>
-          <div class="qr-code-section">
-            <div v-if="qrCodeValue">
-              <VueQrcode
-                :value="qrCodeValue"
-                :type="'image/png'"
-                :color="{ dark: '#000000', light: '#ffffff' }"
-                @change="onDataUrlChange"
-              />
-              <a v-if="qrDataUrl" :href="qrDataUrl" download="movieprofile.png">Download QR</a>
-            </div>
-          </div>
+        <div class="qr-code-section">
+          <VueQrcode
+            v-if="qrCodeValue"
+            :value="qrCodeValue"
+            :type="'image/png'"
+            :color="{ dark: '#000000', light: '#ffffff' }"
+            @change="onDataUrlChange"
+          />
+          <a v-if="qrDataUrl" :href="qrDataUrl" download="movieprofile.png">Download QR</a>
         </div>
       </div>
 
