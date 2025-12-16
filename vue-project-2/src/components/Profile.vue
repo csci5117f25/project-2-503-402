@@ -1,9 +1,25 @@
-<script setup lang="ts">
-import { ref, computed } from 'vue'
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useCurrentUser } from 'vuefire'
 import { Film, BarChart3 } from 'lucide-vue-next'
+import VueQrcode from 'vue-qrcode'
+import { GetUserQrCode } from '@/qrcodes'
+
 
 const currentUser = useCurrentUser()
+
+
+const qrCodeValue = ref('')
+const qrDataUrl = ref('')
+
+function onDataUrlChange(data) {
+  qrDataUrl.value = data
+}
+
+async function genQrCode(userId) {
+  const qrData = await GetUserQrCode(userId)
+  qrCodeValue.value = qrData.value
+}
 
 const user = computed(() => {
   if (!currentUser.value) return null
@@ -51,6 +67,13 @@ const movies = ref([
     poster: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=300&h=450&fit=crop',
   },
 ])
+
+onMounted(() => {
+  if (user.value) {
+    genQrCode(user.value.uid)
+  }
+})
+
 </script>
 
 <template>
@@ -74,6 +97,12 @@ const movies = ref([
         <div class="profile-info">
           <h1 class="user-name">{{ user.displayName }}</h1>
           <p class="user-email">{{ user.email }}</p>
+          <div class="qr-code-section">
+            <div v-if="qrCodeValue">
+              <VueQrcode :value="qrCodeValue" @change="onDataUrlChange" />
+              <a v-if="qrDataUrl" :href="qrDataUrl" download="movieprofile.png">Download QR</a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -123,6 +152,32 @@ const movies = ref([
 </template>
 
 <style scoped>
+  .qr-code-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.qr-code-section canvas,
+.qr-code-section img {
+  width: 120px;
+  height: 120px;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  background: #f9fafb;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+.qr-code-section a {
+  font-size: 0.85rem;
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.qr-code-section a:hover {
+  text-decoration: underline;
+}
+
 .profile-container {
   min-height: 100vh;
   max-width: 1200px;
