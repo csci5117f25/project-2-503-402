@@ -6,11 +6,10 @@ import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
 import { Film, BarChart3, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
-  import VueQrcode from 'vue-qrcode'
+import VueQrcode from 'vue-qrcode'
 import { GetUserQrCode } from '@/qrcodes'
 
 const router = useRouter()
-
 
 const qrCodeValue = ref('')
 const qrDataUrl = ref('')
@@ -69,7 +68,7 @@ function navigateToDraft(movieId: string, rating?: number, comment?: string) {
   })
 }
 
-  onMounted(() => {
+onMounted(() => {
   if (user.value) {
     genQrCode(user.value.uid)
   }
@@ -83,9 +82,9 @@ watch(
       await calculateStats(newUser.uid)
       await fetchDraftReviews(newUser.uid)
     }
-  },  { immediate: true }, )
-
-
+  },
+  { immediate: true },
+)
 
 async function calculateStats(userId: string) {
   isLoadingStats.value = true
@@ -313,7 +312,12 @@ function closeMoviesList() {
           <p class="user-email">{{ user.email }}</p>
           <div class="qr-code-section">
             <div v-if="qrCodeValue">
-              <VueQrcode :value="qrCodeValue" @change="onDataUrlChange" type="image/png" />
+              <VueQrcode
+                :value="qrCodeValue"
+                :type="'image/png'"
+                :color="{ dark: '#000000', light: '#ffffff' }"
+                @change="onDataUrlChange"
+              />
               <a v-if="qrDataUrl" :href="qrDataUrl" download="movieprofile.png">Download QR</a>
             </div>
           </div>
@@ -415,5 +419,4 @@ function closeMoviesList() {
   </div>
 </template>
 
-<style scoped src="@/styles/profile.css">
-</style>
+<style scoped src="@/styles/profile.css"></style>
