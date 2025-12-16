@@ -1,204 +1,211 @@
 <template>
-  <article class="review-card" :class="{ expanded: expandedOnMobile }">
-    <div class="card-grid">
-      <div class="poster-sq">
-        <img
-          v-if="review.posterUrl"
-          :src="review.posterUrl"
-          :alt="`${review.title} poster`"
-          class="poster-img"
-          loading="lazy"
-        />
-        <div v-else class="poster-fallback">No poster</div>
+  <article
+    class="review-card flip-card"
+    :class="{ flipped: isFlipped, expanded: expandedOnMobile }"
+    @click="handleCardClick"
+    role="button"
+    tabindex="0"
+    @keydown.enter.prevent="toggleFlip"
+    @keydown.space.prevent="toggleFlip"
+    :aria-pressed="isFlipped"
+  >
+    <div class="flip-inner">
+      <div class="flip-face flip-front">
+        <div class="card-grid">
+          <div class="poster-sq">
+            <img
+              v-if="review.posterUrl"
+              :src="review.posterUrl"
+              :alt="`${review.title} poster`"
+              class="poster-img"
+              loading="lazy"
+            />
+            <div v-else class="poster-fallback">No poster</div>
+          </div>
+
+          <div class="card-main">
+            <div class="top-row">
+              <div class="title-block">
+                <h3 class="movie-title">{{ review.title }}</h3>
+                <p v-if="review.tagline" class="movie-tagline">{{ review.tagline }}</p>
+              </div>
+
+              <div class="top-right" @click.stop>
+                <div class="global-rating">
+                  <div class="global-stars">
+                    <span class="star">★</span>
+                    <span class="global-score">{{ formatOneDecimal(review.rating_avg) }}</span>
+                    <span class="global-outof">/10</span>
+                  </div>
+                  <div class="global-count">{{ formatCount(review.rating_count) }} ratings</div>
+                </div>
+
+                <div class="card-actions">
+                  <button
+                    type="button"
+                    class="expand-btn"
+                    @click.stop="toggleExpanded"
+                    :aria-expanded="expandedOnMobile"
+                  >
+                    {{ expandedOnMobile ? 'Hide' : 'More' }}
+                  </button>
+
+                  <button
+                    v-if="!isEditing"
+                    type="button"
+                    class="icon-btn"
+                    @click.stop="startEdit"
+                    :disabled="busy"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    v-else
+                    type="button"
+                    class="icon-btn"
+                    @click.stop="cancelEdit"
+                    :disabled="busy"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    v-if="isEditing"
+                    type="button"
+                    class="icon-btn primary"
+                    @click.stop="saveEdit"
+                    :disabled="busy"
+                  >
+                    Save
+                  </button>
+
+                  <button
+                    type="button"
+                    class="icon-btn danger"
+                    @click.stop="$emit('delete', review)"
+                    :disabled="busy"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="user-row" @click.stop>
+              <div class="user-rating">
+                <span class="label">You rated</span>
+
+                <div v-if="!isEditing" class="rating-line">
+                  <span class="chip"> ⭐ {{ formatOneDecimal(review.user_rating) }}/10 </span>
+
+                  <span
+                    v-if="review.user_rating !== null && review.user_rating !== undefined"
+                    class="delta-pill"
+                    :class="deltaClass(review)"
+                    :title="deltaTitle(review)"
+                  >
+                    {{ deltaText(review) }}
+                  </span>
+                </div>
+
+                <div v-else class="edit-rating-line">
+                  <input
+                    class="edit-rating"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="1"
+                    inputmode="numeric"
+                    v-model.number="editRating"
+                    :disabled="busy"
+                    @click.stop
+                  />
+                  <span class="edit-outof">/10</span>
+                </div>
+
+                <button
+                  type="button"
+                  class="rewatch-toggle"
+                  :class="{ on: !!review.rewatch }"
+                  @click.stop="$emit('toggle-rewatch', review)"
+                  :disabled="busy"
+                  :title="review.rewatch ? 'Marked as rewatchable' : 'Mark as rewatchable'"
+                >
+                  <span class="rewatch-dot" />
+                  <span class="rewatch-text">{{ review.rewatch ? 'Rewatch' : 'One-time' }}</span>
+                </button>
+
+                <div class="mobile-facts">
+                  <div class="mobile-fact-line" v-if="review.runtime">
+                    <span class="mobile-fact-label">Runtime</span>
+                    <span class="mobile-fact-value">{{ review.runtime }} min</span>
+                  </div>
+                  <div class="mobile-fact-line">
+                    <span class="mobile-fact-label">Budget</span>
+                    <span class="mobile-fact-value">
+                      {{ review.budget && review.budget > 0 ? formatMoney(review.budget) : 'NA' }}
+                    </span>
+                  </div>
+                  <div class="mobile-fact-line" v-if="review.genresText">
+                    <span class="mobile-fact-label">Genres</span>
+                    <span class="mobile-fact-value">{{ review.genresText }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="user-thoughts desktop-only">
+                <span class="label">Your thoughts</span>
+
+                <p v-if="!isEditing" class="thoughts-text">
+                  {{ review.user_thoughts || '—' }}
+                </p>
+
+                <textarea
+                  v-else
+                  class="edit-thoughts"
+                  rows="4"
+                  v-model="editThoughts"
+                  :disabled="busy"
+                  @click.stop
+                ></textarea>
+              </div>
+            </div>
+
+            <footer class="bottom-row desktop-only" @click.stop>
+              <div class="facts">
+                <span class="fact-pill">{{ formatDate(review.release_date) }}</span>
+                <span v-if="review.runtime" class="fact-pill">{{ review.runtime }} min</span>
+
+                <span class="fact-pill">
+                  Budget:
+                  <span class="fact-strong">
+                    {{ review.budget && review.budget > 0 ? formatMoney(review.budget) : 'NA' }}
+                  </span>
+                </span>
+
+                <span
+                  v-if="review.genresText"
+                  class="fact-pill genres-pill"
+                  :title="review.genresText"
+                >
+                  {{ review.genresText }}
+                </span>
+              </div>
+            </footer>
+          </div>
+        </div>
       </div>
 
-      <div class="card-main">
-        <div class="top-row">
-          <div class="title-block">
-            <h3 class="movie-title">{{ review.title }}</h3>
-            <p v-if="review.tagline" class="movie-tagline">{{ review.tagline }}</p>
-          </div>
-
-          <div class="top-right" @click.stop>
-            <div class="global-rating">
-              <div class="global-stars">
-                <span class="star">★</span>
-                <span class="global-score">{{ formatOneDecimal(review.rating_avg) }}</span>
-                <span class="global-outof">/10</span>
-              </div>
-              <div class="global-count">{{ formatCount(review.rating_count) }} ratings</div>
-            </div>
-
-            <div class="card-actions">
-              <button
-                type="button"
-                class="expand-btn"
-                @click.stop="toggleExpanded"
-                :aria-expanded="expandedOnMobile"
-              >
-                {{ expandedOnMobile ? 'Hide' : 'More' }}
-              </button>
-
-              <button
-                v-if="!isEditing"
-                type="button"
-                class="icon-btn"
-                @click.stop="startEdit"
-                :disabled="busy"
-              >
-                Edit
-              </button>
-
-              <button
-                v-else
-                type="button"
-                class="icon-btn"
-                @click.stop="cancelEdit"
-                :disabled="busy"
-              >
-                Cancel
-              </button>
-
-              <button
-                v-if="isEditing"
-                type="button"
-                class="icon-btn primary"
-                @click.stop="saveEdit"
-                :disabled="busy"
-              >
-                Save
-              </button>
-
-              <button
-                type="button"
-                class="icon-btn danger"
-                @click.stop="$emit('delete', review)"
-                :disabled="busy"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
+      <div class="flip-face flip-back">
+        <div class="flip-back-inner">
+          <div class="flip-back-title">Your thoughts</div>
+          <div class="flip-back-movie">{{ review.title }}</div>
+          <p class="flip-back-text">
+            {{ review.user_thoughts || '—' }}
+          </p>
+          <div class="flip-back-hint">Tap to flip back</div>
         </div>
-
-        <div class="user-row" @click.stop>
-          <div class="user-rating">
-            <span class="label">You rated</span>
-
-            <div v-if="!isEditing" class="rating-line">
-              <span class="chip"> ⭐ {{ formatOneDecimal(review.user_rating) }}/10 </span>
-
-              <span
-                v-if="review.user_rating !== null && review.user_rating !== undefined"
-                class="delta-pill"
-                :class="deltaClass(review)"
-                :title="deltaTitle(review)"
-              >
-                {{ deltaText(review) }}
-              </span>
-            </div>
-
-            <div v-else class="edit-rating-line">
-              <input
-                class="edit-rating"
-                type="number"
-                min="0"
-                max="10"
-                step="1"
-                inputmode="numeric"
-                v-model.number="editRating"
-                :disabled="busy"
-              />
-              <span class="edit-outof">/10</span>
-            </div>
-
-            <button
-              type="button"
-              class="rewatch-toggle"
-              :class="{ on: !!review.rewatch }"
-              @click.stop="$emit('toggle-rewatch', review)"
-              :disabled="busy"
-              :title="review.rewatch ? 'Marked as rewatchable' : 'Mark as rewatchable'"
-            >
-              <span class="rewatch-dot" />
-              <span class="rewatch-text">{{ review.rewatch ? 'Rewatch' : 'One-time' }}</span>
-            </button>
-          </div>
-
-          <div class="user-thoughts desktop-only">
-            <span class="label">Your thoughts</span>
-
-            <p v-if="!isEditing" class="thoughts-text">
-              {{ review.user_thoughts || '—' }}
-            </p>
-
-            <textarea
-              v-else
-              class="edit-thoughts"
-              rows="4"
-              v-model="editThoughts"
-              :disabled="busy"
-            ></textarea>
-          </div>
-        </div>
-
-        <div class="mobile-details" v-show="expandedOnMobile" @click.stop>
-          <div class="user-thoughts">
-            <span class="label">Your thoughts</span>
-
-            <p v-if="!isEditing" class="thoughts-text">
-              {{ review.user_thoughts || '—' }}
-            </p>
-
-            <textarea
-              v-else
-              class="edit-thoughts"
-              rows="4"
-              v-model="editThoughts"
-              :disabled="busy"
-            ></textarea>
-          </div>
-
-          <footer class="bottom-row">
-            <div class="facts">
-              <span class="fact-pill">{{ formatDate(review.release_date) }}</span>
-              <span v-if="review.runtime" class="fact-pill">{{ review.runtime }} min</span>
-
-              <span class="fact-pill">
-                Budget:
-                <span class="fact-strong">
-                  {{ review.budget && review.budget > 0 ? formatMoney(review.budget) : 'NA' }}
-                </span>
-              </span>
-
-              <span
-                v-if="review.genresText"
-                class="fact-pill genres-pill"
-                :title="review.genresText"
-              >
-                {{ review.genresText }}
-              </span>
-            </div>
-          </footer>
-        </div>
-
-        <footer class="bottom-row desktop-only" @click.stop>
-          <div class="facts">
-            <span class="fact-pill">{{ formatDate(review.release_date) }}</span>
-            <span v-if="review.runtime" class="fact-pill">{{ review.runtime }} min</span>
-
-            <span class="fact-pill">
-              Budget:
-              <span class="fact-strong">
-                {{ review.budget && review.budget > 0 ? formatMoney(review.budget) : 'NA' }}
-              </span>
-            </span>
-
-            <span v-if="review.genresText" class="fact-pill genres-pill" :title="review.genresText">
-              {{ review.genresText }}
-            </span>
-          </div>
-        </footer>
       </div>
     </div>
   </article>
@@ -236,7 +243,19 @@ const emit = defineEmits<{
   (e: 'save', payload: { movieId: number; rating: number | null; thoughts: string | null }): void
 }>()
 
-// ----- inline edit state -----
+const isFlipped = ref(false)
+function toggleFlip() {
+  if (busy?.value) return
+  if (isEditing.value) return
+  isFlipped.value = !isFlipped.value
+}
+function handleCardClick(e: MouseEvent) {
+  const el = e.target as HTMLElement | null
+  if (!el) return
+  if (el.closest('button, a, input, textarea, select, label')) return
+  toggleFlip()
+}
+
 const isEditing = ref(false)
 const editRating = ref<number | null>(review.value.user_rating ?? null)
 const editThoughts = ref<string>(review.value.user_thoughts ?? '')
@@ -254,6 +273,7 @@ watch(
 
 function startEdit() {
   isEditing.value = true
+  isFlipped.value = false
   editRating.value = review.value.user_rating ?? null
   editThoughts.value = review.value.user_thoughts ?? ''
 }

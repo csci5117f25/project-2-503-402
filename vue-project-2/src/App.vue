@@ -91,7 +91,9 @@ async function logout() {
             Sign in with Google
           </button>
           <template v-else>
-            <span class="welcome-text">Welcome back, {{ getFirstName(user.displayName) || user.email }}!</span>
+            <span class="welcome-text"
+              >Welcome back, {{ getFirstName(user.displayName) || user.email }}!</span
+            >
             <button @click="logout" class="auth-btn logout-btn">Log out</button>
           </template>
         </div>
