@@ -34,7 +34,6 @@ export interface UserReview {
   comment: string
   draft?: boolean
   rewatch?: boolean
-  loggedAt?: any
 }
 
 export type UserMovieReview = MovieData & {
@@ -42,7 +41,6 @@ export type UserMovieReview = MovieData & {
   comment: string
   draft?: boolean
   rewatch?: boolean
-  loggedAt?: any
 }
 
 //
