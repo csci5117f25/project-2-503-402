@@ -254,7 +254,6 @@ const yearStats = computed(() => {
   }
 })
 
-/** ✅ Save from inline card editor */
 async function handleCardSave(payload: {
   movieId: number
   rating: number | null
@@ -470,7 +469,10 @@ onMounted(() => {
   measureNavHeight()
   window.addEventListener('scroll', handleScroll, { passive: true })
   window.addEventListener('resize', measureNavHeight, { passive: true })
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
 })
+
+
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleScroll)

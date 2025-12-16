@@ -1,5 +1,5 @@
 <template>
-  <article class="review-card">
+  <article class="review-card" :class="{ expanded: expandedOnMobile }">
     <div class="card-grid">
       <div class="poster-sq">
         <img
@@ -19,7 +19,7 @@
             <p v-if="review.tagline" class="movie-tagline">{{ review.tagline }}</p>
           </div>
 
-          <div class="top-right">
+          <div class="top-right" @click.stop>
             <div class="global-rating">
               <div class="global-stars">
                 <span class="star">★</span>
@@ -31,16 +31,25 @@
 
             <div class="card-actions">
               <button
+                type="button"
+                class="expand-btn"
+                @click.stop="toggleExpanded"
+                :aria-expanded="expandedOnMobile"
+              >
+                {{ expandedOnMobile ? 'Hide' : 'More' }}
+              </button>
+
+              <button
                 v-if="!isEditing"
                 type="button"
                 class="icon-btn"
-                @click="startEdit"
+                @click.stop="startEdit"
                 :disabled="busy"
               >
                 Edit
               </button>
 
-              <button v-else type="button" class="icon-btn" @click="cancelEdit" :disabled="busy">
+              <button v-else type="button" class="icon-btn" @click.stop="cancelEdit" :disabled="busy">
                 Cancel
               </button>
 
@@ -48,7 +57,7 @@
                 v-if="isEditing"
                 type="button"
                 class="icon-btn primary"
-                @click="saveEdit"
+                @click.stop="saveEdit"
                 :disabled="busy"
               >
                 Save
@@ -57,7 +66,7 @@
               <button
                 type="button"
                 class="icon-btn danger"
-                @click="$emit('delete', review)"
+                @click.stop="$emit('delete', review)"
                 :disabled="busy"
               >
                 Delete
@@ -66,11 +75,10 @@
           </div>
         </div>
 
-        <div class="user-row">
+        <div class="user-row" @click.stop>
           <div class="user-rating">
             <span class="label">You rated</span>
 
-            <!-- VIEW MODE -->
             <div v-if="!isEditing" class="rating-line">
               <span class="chip"> ⭐ {{ formatOneDecimal(review.user_rating) }}/10 </span>
 
@@ -84,7 +92,6 @@
               </span>
             </div>
 
-            <!-- EDIT MODE -->
             <div v-else class="edit-rating-line">
               <input
                 class="edit-rating"
@@ -103,7 +110,7 @@
               type="button"
               class="rewatch-toggle"
               :class="{ on: !!review.rewatch }"
-              @click="$emit('toggle-rewatch', review)"
+              @click.stop="$emit('toggle-rewatch', review)"
               :disabled="busy"
               :title="review.rewatch ? 'Marked as rewatchable' : 'Mark as rewatchable'"
             >
@@ -112,15 +119,13 @@
             </button>
           </div>
 
-          <div class="user-thoughts">
+          <div class="user-thoughts desktop-only">
             <span class="label">Your thoughts</span>
 
-            <!-- VIEW MODE -->
             <p v-if="!isEditing" class="thoughts-text">
               {{ review.user_thoughts || '—' }}
             </p>
 
-            <!-- EDIT MODE -->
             <textarea
               v-else
               class="edit-thoughts"
@@ -131,7 +136,43 @@
           </div>
         </div>
 
-        <footer class="bottom-row">
+        <div class="mobile-details" v-show="expandedOnMobile" @click.stop>
+          <div class="user-thoughts">
+            <span class="label">Your thoughts</span>
+
+            <p v-if="!isEditing" class="thoughts-text">
+              {{ review.user_thoughts || '—' }}
+            </p>
+
+            <textarea
+              v-else
+              class="edit-thoughts"
+              rows="4"
+              v-model="editThoughts"
+              :disabled="busy"
+            ></textarea>
+          </div>
+
+          <footer class="bottom-row">
+            <div class="facts">
+              <span class="fact-pill">{{ formatDate(review.release_date) }}</span>
+              <span v-if="review.runtime" class="fact-pill">{{ review.runtime }} min</span>
+
+              <span class="fact-pill">
+                Budget:
+                <span class="fact-strong">
+                  {{ review.budget && review.budget > 0 ? formatMoney(review.budget) : 'NA' }}
+                </span>
+              </span>
+
+              <span v-if="review.genresText" class="fact-pill genres-pill" :title="review.genresText">
+                {{ review.genresText }}
+              </span>
+            </div>
+          </footer>
+        </div>
+
+        <footer class="bottom-row desktop-only" @click.stop>
           <div class="facts">
             <span class="fact-pill">{{ formatDate(review.release_date) }}</span>
             <span v-if="review.runtime" class="fact-pill">{{ review.runtime }} min</span>
@@ -154,7 +195,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, toRefs } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, toRefs, watch } from 'vue'
 
 type ReviewCard = {
   movieId: number
@@ -185,6 +226,7 @@ const emit = defineEmits<{
   (e: 'save', payload: { movieId: number; rating: number | null; thoughts: string | null }): void
 }>()
 
+// ----- inline edit state -----
 const isEditing = ref(false)
 const editRating = ref<number | null>(review.value.user_rating ?? null)
 const editThoughts = ref<string>(review.value.user_thoughts ?? '')
@@ -214,12 +256,35 @@ function cancelEdit() {
 
 function saveEdit() {
   const rating =
-    editRating.value === null || Number.isNaN(editRating.value) ? null : editRating.value
-
+    editRating.value === null || Number.isNaN(editRating.value) ? null : Math.round(editRating.value)
   const thoughts = editThoughts.value?.trim() ? editThoughts.value.trim() : null
 
   emit('save', { movieId: review.value.movieId, rating, thoughts })
   isEditing.value = false
+}
+
+const isMobile = ref(false)
+const expanded = ref(false)
+
+function measureMobile() {
+  isMobile.value = window.matchMedia('(max-width: 640px)').matches
+  if (!isMobile.value) expanded.value = false
+}
+
+onMounted(() => {
+  measureMobile()
+  window.addEventListener('resize', measureMobile, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', measureMobile)
+})
+
+const expandedOnMobile = computed(() => isMobile.value && expanded.value)
+
+function toggleExpanded() {
+  if (!isMobile.value) return
+  expanded.value = !expanded.value
 }
 
 function formatOneDecimal(n: number | null | undefined) {

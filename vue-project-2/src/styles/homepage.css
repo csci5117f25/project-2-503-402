@@ -340,3 +340,64 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+@media (max-width: 640px) {
+  .home-page {
+    padding: 11.5rem 1rem 2.25rem;
+    scroll-padding-top: 180px;
+    overflow-x: hidden;
+  }
+
+  .home-inner {
+    gap: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.35rem;
+  }
+
+  .section-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .cards-list {
+    gap: 0.9rem;
+  }
+
+  .year-card {
+    padding: 0.85rem 0.85rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .year-metrics {
+    grid-template-columns: 1fr; 
+    gap: 0.6rem;
+  }
+
+  .sidebar {
+    max-height: none !important;
+    overflow: visible !important;
+    display: none !important;
+  }
+
+  .sidebar-item {
+    padding: 0.5rem 0.6rem;
+    border-radius: 0.75rem;
+  }
+
+  .sidebar-list {
+    max-height: none !important;
+    overflow: visible !important; 
+    -webkit-overflow-scrolling: auto;
+  }
+
+  .sidebar-movie-title {
+    max-width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
