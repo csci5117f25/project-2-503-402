@@ -69,127 +69,16 @@
         </div>
 
         <div class="cards-list">
-          <article
+          <ReviewCard
             v-for="(review, index) in reviews"
             :key="review.movieId"
-            :ref="(el) => (cardRefs[index] = el as HTMLElement)"
-            class="review-card"
-          >
-            <div class="card-grid">
-              <div class="poster-sq">
-                <img
-                  v-if="review.posterUrl"
-                  :src="review.posterUrl"
-                  :alt="`${review.title} poster`"
-                  class="poster-img"
-                  loading="lazy"
-                />
-                <div v-else class="poster-fallback">No poster</div>
-              </div>
-
-              <div class="card-main">
-                <div class="top-row">
-                  <div class="title-block">
-                    <h3 class="movie-title">{{ review.title }}</h3>
-                    <p v-if="review.tagline" class="movie-tagline">{{ review.tagline }}</p>
-                  </div>
-
-                  <div class="top-right">
-                    <div class="global-rating">
-                      <div class="global-stars">
-                        <span class="star">★</span>
-                        <span class="global-score">{{ formatOneDecimal(review.rating_avg) }}</span>
-                        <span class="global-outof">/10</span>
-                      </div>
-                      <div class="global-count">{{ formatCount(review.rating_count) }} ratings</div>
-                    </div>
-
-                    <div class="card-actions">
-                      <button
-                        type="button"
-                        class="icon-btn"
-                        @click="openEdit(review)"
-                        :disabled="reviewSavingId === review.movieId"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        type="button"
-                        class="icon-btn danger"
-                        @click="confirmDelete(review)"
-                        :disabled="reviewSavingId === review.movieId"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="user-row">
-                  <div class="user-rating">
-                    <span class="label">You rated</span>
-
-                    <div class="rating-line">
-                      <span class="chip"> ⭐ {{ formatOneDecimal(review.user_rating) }}/10 </span>
-
-                      <span
-                        v-if="review.user_rating !== null && review.user_rating !== undefined"
-                        class="delta-pill"
-                        :class="deltaClass(review)"
-                        :title="deltaTitle(review)"
-                      >
-                        {{ deltaText(review) }}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      class="rewatch-toggle"
-                      :class="{ on: !!review.rewatch }"
-                      @click="toggleRewatch(review)"
-                      :disabled="reviewSavingId === review.movieId"
-                      :title="review.rewatch ? 'Marked as rewatchable' : 'Mark as rewatchable'"
-                    >
-                      <span class="rewatch-dot" />
-                      <span class="rewatch-text">
-                        {{ review.rewatch ? 'Rewatch' : 'One-time' }}
-                      </span>
-                    </button>
-                  </div>
-
-                  <div class="user-thoughts">
-                    <span class="label">Your thoughts</span>
-                    <p class="thoughts-text">
-                      {{ review.user_thoughts || '—' }}
-                    </p>
-                  </div>
-                </div>
-
-                <footer class="bottom-row">
-                  <div class="facts">
-                    <span class="fact-pill">{{ formatDate(review.release_date) }}</span>
-                    <span v-if="review.runtime" class="fact-pill">{{ review.runtime }} min</span>
-
-                    <span class="fact-pill">
-                      Budget:
-                      <span class="fact-strong">
-                        {{ review.budget && review.budget > 0 ? formatMoney(review.budget) : 'NA' }}
-                      </span>
-                    </span>
-
-                    <span
-                      v-if="review.genresText"
-                      class="fact-pill genres-pill"
-                      :title="review.genresText"
-                    >
-                      {{ review.genresText }}
-                    </span>
-                  </div>
-                </footer>
-              </div>
-            </div>
-          </article>
+            :review="review"
+            :busy="reviewSavingId === review.movieId"
+            :ref="(cmp) => setCardRef(cmp, index)"
+            @edit="openEdit"
+            @delete="confirmDelete"
+            @toggle-rewatch="toggleRewatch"
+          />
         </div>
       </section>
 
@@ -213,7 +102,7 @@
       </aside>
     </div>
 
-    <!-- ✅ Edit Modal -->
+
     <div v-if="editOpen" class="modal-backdrop" @click.self="closeEdit">
       <div class="modal">
         <div class="modal-head">
@@ -244,12 +133,7 @@
 
         <div class="modal-foot">
           <button class="btn" type="button" @click="closeEdit">Cancel</button>
-          <button
-            class="btn primary"
-            type="button"
-            @click="saveEdit"
-            :disabled="!editDraft || savingEdit"
-          >
+          <button class="btn primary" type="button" @click="saveEdit" :disabled="!editDraft || savingEdit">
             {{ savingEdit ? 'Saving…' : 'Save changes' }}
           </button>
         </div>
@@ -261,6 +145,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useCurrentUser } from 'vuefire'
+
+import ReviewCard from '@/components/ReviewCard.vue'
+
 import {
   getAllUserReviews,
   getUserMovieReviews,
@@ -270,7 +157,7 @@ import {
   type UserReview,
 } from '@/movies'
 
-type ReviewCard = {
+type ReviewCardData = {
   movieId: number
   title: string
   tagline: string | null
@@ -294,13 +181,14 @@ type ReviewCard = {
 const currentUser = useCurrentUser()
 const userId = computed(() => currentUser.value?.uid ?? null)
 
-const reviews = ref<ReviewCard[]>([])
+const reviews = ref<ReviewCardData[]>([])
 const loading = ref(false)
 const loadError = ref<string | null>(null)
 
 const cardRefs = ref<HTMLElement[]>([])
 const sidebarItemRefs = ref<HTMLElement[]>([])
 const activeReviewId = ref<number | null>(null)
+
 const navOffset = ref(90)
 const isJumping = ref(false)
 
@@ -310,10 +198,16 @@ const currentYear = new Date().getFullYear()
 /** ✅ Edit modal state */
 const editOpen = ref(false)
 const savingEdit = ref(false)
-const editDraft = ref<ReviewCard | null>(null)
+const editDraft = ref<ReviewCardData | null>(null)
 const editForm = ref<{ rating: number | null; thoughts: string }>({ rating: null, thoughts: '' })
 
-function openEdit(r: ReviewCard) {
+
+function setCardRef(cmp: any, index: number) {
+  const el = cmp?.$el as HTMLElement | undefined
+  if (el) cardRefs.value[index] = el
+}
+
+function openEdit(r: ReviewCardData) {
   editDraft.value = r
   editForm.value = { rating: r.user_rating ?? null, thoughts: r.user_thoughts ?? '' }
   editOpen.value = true
@@ -337,6 +231,7 @@ async function saveEdit() {
       comment: editForm.value.thoughts?.trim() ? editForm.value.thoughts.trim() : null,
       draft: false,
       rewatch: editDraft.value.rewatch ?? false,
+      loggedAt: editDraft.value.loggedAt ?? null,
     }
 
     await addUserReview(userId.value, movieId, payload)
@@ -353,7 +248,7 @@ async function saveEdit() {
   }
 }
 
-async function confirmDelete(r: ReviewCard) {
+async function confirmDelete(r: ReviewCardData) {
   if (!userId.value) return
   const ok = window.confirm(`Delete your review for "${r.title}"?`)
   if (!ok) return
@@ -384,42 +279,11 @@ function formatCount(n: number | null | undefined) {
   if (n === null || n === undefined || Number.isNaN(n)) return '0'
   return Intl.NumberFormat('en-US').format(n)
 }
-function formatDate(iso: string) {
-  if (!iso) return 'Unknown'
-  const d = new Date(iso + 'T00:00:00')
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-}
-function formatMoney(n: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(n)
-}
 
-function deltaValue(r: ReviewCard) {
+function deltaValue(r: ReviewCardData) {
   if (r.user_rating === null || r.user_rating === undefined) return null
   if (r.rating_avg === null || r.rating_avg === undefined) return null
   return r.user_rating - r.rating_avg
-}
-function deltaText(r: ReviewCard) {
-  const d = deltaValue(r)
-  if (d === null) return ''
-  const sign = d > 0 ? '+' : ''
-  return `${sign}${d.toFixed(1)}`
-}
-function deltaTitle(r: ReviewCard) {
-  const d = deltaValue(r)
-  if (d === null) return ''
-  return `You (${formatOneDecimal(r.user_rating)}) vs TMDB (${formatOneDecimal(r.rating_avg)})`
-}
-function deltaClass(r: ReviewCard) {
-  const d = deltaValue(r)
-  if (d === null) return 'neutral'
-  if (d > 0.05) return 'pos'
-  if (d < -0.05) return 'neg'
-  return 'neutral'
 }
 
 function toDateMaybe(v: any): Date | null {
@@ -448,7 +312,7 @@ function timeAgo(d: Date | null): string {
 const yearStats = computed(() => {
   const list = reviews.value.filter((r) => !r.draft)
 
-  let hotTake: ReviewCard | null = null
+  let hotTake: ReviewCardData | null = null
   let hotDelta = -Infinity
   for (const r of list) {
     const d = deltaValue(r)
@@ -460,7 +324,7 @@ const yearStats = computed(() => {
   }
   const hotTakeDelta = hotTake && hotDelta !== -Infinity ? `+${hotDelta.toFixed(1)}` : null
 
-  let favorite: ReviewCard | null = null
+  let favorite: ReviewCardData | null = null
   let bestRating = -Infinity
   for (const r of list) {
     if (r.user_rating === null || r.user_rating === undefined) continue
@@ -470,7 +334,7 @@ const yearStats = computed(() => {
     }
   }
 
-  let recent: ReviewCard | null = null
+  let recent: ReviewCardData | null = null
   let recentDate: Date | null = null
   for (const r of list) {
     const d = toDateMaybe(r.loggedAt)
@@ -482,23 +346,18 @@ const yearStats = computed(() => {
   }
 
   const rewatchCount = list.filter((r) => !!r.rewatch).length
-  const rewatchRate =
-    list.length > 0 ? `${Math.round((rewatchCount / list.length) * 100)}% rewatch` : '—'
+  const rewatchRate = list.length > 0 ? `${Math.round((rewatchCount / list.length) * 100)}% rewatch` : '—'
 
   return {
     hotTakeTitle: hotTake?.title ?? '—',
     hotTakeDelta,
     hotTakeYou:
-      hotTake?.user_rating !== null && hotTake?.user_rating !== undefined
-        ? hotTake.user_rating.toFixed(1)
-        : '—',
+      hotTake?.user_rating !== null && hotTake?.user_rating !== undefined ? hotTake.user_rating.toFixed(1) : '—',
     hotTakeTmdb: hotTake ? formatOneDecimal(hotTake.rating_avg) : '—',
 
     favoriteTitle: favorite?.title ?? '—',
     favoriteRating:
-      favorite?.user_rating !== null && favorite?.user_rating !== undefined
-        ? favorite.user_rating.toFixed(1)
-        : null,
+      favorite?.user_rating !== null && favorite?.user_rating !== undefined ? favorite.user_rating.toFixed(1) : null,
 
     recentTitle: recent?.title ?? '—',
     recentWhen: recentDate ? timeAgo(recentDate) : 'Needs loggedAt',
@@ -508,7 +367,7 @@ const yearStats = computed(() => {
   }
 })
 
-async function toggleRewatch(r: ReviewCard) {
+async function toggleRewatch(r: ReviewCardData) {
   if (!userId.value) return
   reviewSavingId.value = r.movieId
 
@@ -519,8 +378,9 @@ async function toggleRewatch(r: ReviewCard) {
     const payload: UserReview = {
       rating: r.user_rating ?? null,
       comment: r.user_thoughts ?? null,
-      draft: r.draft ?? false,
+      draft: false,
       rewatch: next,
+      loggedAt: r.loggedAt ?? null,
     }
 
     await addUserReview(userId.value, r.movieId, payload)
@@ -538,9 +398,7 @@ async function loadHomeReviews(uid: string) {
 
   try {
     const reviewMap = await getAllUserReviews(uid)
-    const movieIds = Object.keys(reviewMap)
-      .map((id) => parseInt(id))
-      .filter((n) => !Number.isNaN(n))
+    const movieIds = Object.keys(reviewMap).map((id) => parseInt(id)).filter((n) => !Number.isNaN(n))
 
     if (movieIds.length === 0) {
       reviews.value = []
@@ -550,7 +408,7 @@ async function loadHomeReviews(uid: string) {
 
     const joined = await getUserMovieReviews(uid, movieIds)
 
-    const cards: ReviewCard[] = joined
+    const cards: ReviewCardData[] = joined
       .map((item, idx) => {
         if (!item) return null
 
@@ -575,13 +433,12 @@ async function loadHomeReviews(uid: string) {
           draft: item.draft ?? false,
 
           rewatch: (item as any).rewatch ?? false,
-          loggedAt:
-            (item as any).loggedAt ?? (item as any).updatedAt ?? (item as any).createdAt ?? null,
+          loggedAt: (item as any).loggedAt ?? (item as any).updatedAt ?? (item as any).createdAt ?? null,
 
           posterUrl,
-        } satisfies ReviewCard
+        } satisfies ReviewCardData
       })
-      .filter((x): x is ReviewCard => !!x && !x.draft)
+      .filter((x): x is ReviewCardData => !!x && !x.draft)
 
     reviews.value = cards
 
@@ -614,10 +471,7 @@ watch(
 )
 
 const measureNavHeight = () => {
-  const nav =
-    document.querySelector('header') ||
-    document.querySelector('nav') ||
-    document.querySelector('.navbar')
+  const nav = document.querySelector('header') || document.querySelector('nav') || document.querySelector('.navbar')
   if (nav) navOffset.value = nav.getBoundingClientRect().height
 }
 
@@ -631,7 +485,6 @@ const scrollToReview = (movieId: number) => {
   activeReviewId.value = movieId
   isJumping.value = true
   el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-
   setTimeout(() => (isJumping.value = false), 600)
 }
 
@@ -673,3 +526,5 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped src="@/styles/homepage.css"></style>
+
+
