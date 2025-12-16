@@ -191,6 +191,6 @@ function onError(err) {
 
 .qr-text {
   /* background-color: white; */
-  color: black;
+  color: white;
 }
 </style>
