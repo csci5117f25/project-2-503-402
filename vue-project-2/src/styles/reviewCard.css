@@ -1,9 +1,10 @@
 .review-card {
-  background: #ffffff;
+  background: rgba(30, 30, 30, 0.88);
   border-radius: 1.1rem;
   padding: 0.9rem;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(18px);
   max-width: 920px;
   margin-right: auto;
   overflow: visible;
@@ -26,9 +27,9 @@
   overflow: hidden;
   display: grid;
   place-items: center;
-  background: rgba(148, 163, 184, 0.12);
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
 }
 
 .poster-img {
@@ -39,7 +40,7 @@
 
 .poster-fallback {
   font-size: 0.8rem;
-  color: #4b5563;
+  color: #d1d5db;
   padding: 0.75rem;
   text-align: center;
 }
@@ -50,7 +51,7 @@
   display: grid;
   grid-template-rows: auto auto auto;
   gap: 0.8rem;
-  background: #ffffff;
+  background: transparent;
 }
 
 .top-row {
@@ -76,7 +77,7 @@
   padding: 0;
   font-size: 1.15rem;
   font-weight: 850;
-  color: #111827;
+  color: #ffffff;
   line-height: 1.2;
   display: block;
   white-space: nowrap;
@@ -88,7 +89,7 @@
   margin: 0.25rem 0 0;
   padding: 0;
   font-size: 0.9rem;
-  color: #6b7280;
+  color: #9ca3af;
   font-style: italic;
   display: block;
   white-space: normal !important;
@@ -109,8 +110,8 @@
   text-align: right;
   padding: 0.45rem 0.6rem;
   border-radius: 0.9rem;
-  background: rgba(17, 24, 39, 0.03);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .global-stars {
@@ -122,24 +123,25 @@
 
 .star {
   font-size: 0.95rem;
+  color: #d1d5db;
 }
 
 .global-score {
   font-size: 1.05rem;
   font-weight: 850;
-  color: #111827;
+  color: #ffffff;
 }
 
 .global-outof {
   font-size: 0.8rem;
-  color: #6b7280;
+  color: #9ca3af;
   font-weight: 700;
 }
 
 .global-count {
   margin-top: 0.15rem;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #9ca3af;
   font-weight: 650;
 }
 
@@ -150,41 +152,58 @@
 }
 
 .icon-btn {
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(255, 255, 255, 0.9);
-  color: #111827;
-  font-weight: 850;
-  font-size: 0.78rem;
-  padding: 0.22rem 0.55rem;
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 32px;
+  height: 32px;
+  border-radius: 0.6rem;
+
+  border: none;
+  background: transparent;
+  color: #e5e7eb;
+
   cursor: pointer;
   transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 .icon-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
 }
 
 .icon-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
 .icon-btn.danger {
-  border-color: rgba(239, 68, 68, 0.35);
-  background: rgba(239, 68, 68, 0.08);
-  color: #991b1b;
+  color: #ef4444;
+}
+
+.icon-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.14);
 }
 
 .icon-btn.primary {
-  background: #111827;
-  color: #f9fafb;
-  border-color: rgba(17, 24, 39, 0.65);
+  color: #ffffff;
+  background: rgba(239, 68, 68, 0.95);
+}
+
+.icon-btn.primary:hover {
+  background: #ef4444;
 }
 
 .user-row {
@@ -201,7 +220,7 @@
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: #9ca3af;
   margin-bottom: 0.25rem;
   font-weight: 850;
 }
@@ -217,14 +236,20 @@
 .user-rating .chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.22rem 0.6rem;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #f97316, #facc15);
-  color: #111827;
-  font-weight: 900;
-  font-size: 0.9rem;
-  white-space: nowrap;
+  gap: 0.3rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.chip-star {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: #ffffff;
 }
 
 .delta-pill {
@@ -232,26 +257,28 @@
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 900;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(148, 163, 184, 0.12);
-  color: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
   white-space: nowrap;
 }
 
 .delta-pill.pos {
-  background: rgba(34, 197, 94, 0.12);
+  background: rgba(34, 197, 94, 0.14);
   border-color: rgba(34, 197, 94, 0.28);
-  color: #166534;
+  color: #bbf7d0;
 }
+
 .delta-pill.neg {
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.14);
   border-color: rgba(239, 68, 68, 0.28);
-  color: #991b1b;
+  color: #fecaca;
 }
+
 .delta-pill.neutral {
-  background: rgba(148, 163, 184, 0.12);
-  border-color: rgba(148, 163, 184, 0.25);
-  color: #374151;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
 }
 
 .rewatch-toggle {
@@ -262,9 +289,9 @@
   gap: 0.45rem;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  background: rgba(148, 163, 184, 0.1);
-  color: #374151;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
   font-weight: 850;
   font-size: 0.78rem;
   cursor: pointer;
@@ -278,13 +305,13 @@
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.55);
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .rewatch-toggle.on {
-  background: rgba(34, 197, 94, 0.12);
-  border-color: rgba(34, 197, 94, 0.3);
-  color: #166534;
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.28);
+  color: #bbf7d0;
 }
 
 .rewatch-toggle.on .rewatch-dot {
@@ -295,7 +322,7 @@
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.45;
-  color: #374151;
+  color: #e5e7eb;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -305,42 +332,46 @@
   display: flex;
   justify-content: space-between;
   gap: 0.8rem;
-  align-items: center;
-  flex-wrap: nowrap;
-  overflow: hidden;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  overflow: visible;
   padding-top: 0.75rem;
-  border-top: 1px dashed rgba(148, 163, 184, 0.35);
+  border-top: 1px dashed rgba(255, 255, 255, 0.14);
   margin-top: 0.1rem;
 }
 
 .facts {
   display: flex;
-  width: 70%;
-  gap: 0.45rem;
-  flex-wrap: nowrap;
-  overflow: hidden;
+  width: 100%;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  overflow: visible;
 }
 
 .fact-pill {
+  display: inline-flex;
+  align-items: center;
   flex: 0 0 auto;
   font-size: 0.78rem;
   padding: 0.18rem 0.55rem;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.15);
-  color: #374151;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
   white-space: nowrap;
   font-weight: 650;
 }
 
 .fact-strong {
   font-weight: 900;
-  color: #111827;
+  color: #ffffff;
 }
 
 .genres-pill {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 380px;
+  max-width: 100%;
+  width: fit-content;
+  overflow: visible;
+  text-overflow: unset;
+  flex: 0 0 auto;
 }
 
 .expand-btn {
@@ -387,8 +418,8 @@
   transform: rotateY(180deg);
   display: grid;
   place-items: center;
-  background: #ffffff;
-  color: #111827;
+  background: rgba(30, 30, 30, 0.95);
+  color: #ffffff;
 }
 
 .flip-back-inner {
@@ -502,8 +533,8 @@
     gap: 0.5rem;
     padding: 0.22rem 0.6rem;
     border-radius: 0.75rem;
-    background: rgba(148, 163, 184, 0.15);
-    color: #374151;
+    background: rgba(255, 255, 255, 0.06);
+    color: #e5e7eb;
     font-size: 0.78rem;
     font-weight: 650;
     align-self: flex-start;
@@ -515,14 +546,14 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     font-weight: 850;
-    color: #6b7280;
+    color: #9ca3af;
     white-space: nowrap;
     flex-shrink: 0;
   }
 
   .mobile-fact-value {
     font-weight: 850;
-    color: #111827;
+    color: #ffffff;
     max-width: 65%;
     overflow: visible;
     text-overflow: unset;

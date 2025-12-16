@@ -5,13 +5,14 @@
         <h2 class="section-title">Your Reviews</h2>
 
         <div v-if="!userId" class="empty-state">Please sign in to see your reviews.</div>
-        <div v-else-if="loading" class="empty-state">Loading your reviews…</div>
+        <div v-else-if="loading" class="loading-state">
+          <div class="spinner" aria-label="Loading" />
+          <p class="loading-text">Loading your reviews</p>
+        </div>
         <div v-else-if="loadError" class="empty-state">
           {{ loadError }}
         </div>
-        <div v-else-if="reviews.length === 0" class="empty-state">
-          No reviews yet
-        </div>
+        <div v-else-if="reviews.length === 0" class="empty-state">No reviews yet</div>
 
         <div v-else class="year-card">
           <div class="year-card-top">
@@ -70,7 +71,9 @@
             Next
           </button>
 
-          <div class="pager-meta">Page {{ page }} / {{ totalPages }} · {{ reviews.length }} movies total</div>
+          <div class="pager-meta">
+            Page {{ page }} / {{ totalPages }} · {{ reviews.length }} movies total
+          </div>
         </div>
 
         <div class="cards-list">
@@ -103,7 +106,9 @@
             Next
           </button>
 
-          <div class="pager-meta">Page {{ page }} / {{ totalPages }} · {{ reviews.length }} total</div>
+          <div class="pager-meta">
+            Page {{ page }} / {{ totalPages }} · {{ reviews.length }} total
+          </div>
         </div>
       </section>
 
@@ -121,7 +126,7 @@
             @click="scrollToReview(review.movieId)"
           >
             <span class="sidebar-movie-title">{{ review.title }}</span>
-            <span class="sidebar-rating">{{ formatOneDecimal(review.user_rating) }}/10</span>
+            <span class="sidebar-rating">{{ Math.round(review.user_rating) }}/10</span>
           </button>
         </div>
       </aside>
@@ -192,7 +197,6 @@ function setSidebarItemRef(el: unknown, index: number) {
   }
 }
 
-
 function formatOneDecimal(n: number | null | undefined) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—'
   return n.toFixed(1)
@@ -203,7 +207,6 @@ function deltaValue(r: ReviewCardData) {
   if (r.rating_avg === null || r.rating_avg === undefined) return null
   return r.user_rating - r.rating_avg
 }
-
 
 const page = ref(1)
 const pageSize = ref(10)
@@ -249,7 +252,6 @@ function setPage(p: number) {
 
   window.scrollTo({ top: navOffset.value + 20, left: 0, behavior: 'smooth' })
 }
-
 
 const yearStats = computed(() => {
   const list = reviews.value.filter((r) => !r.draft)
@@ -300,7 +302,11 @@ const yearStats = computed(() => {
   }
 })
 
-async function handleCardSave(payload: { movieId: number; rating: number | null; thoughts: string | null }) {
+async function handleCardSave(payload: {
+  movieId: number
+  rating: number | null
+  thoughts: string | null
+}) {
   if (!userId.value) return
 
   const { movieId, rating, thoughts } = payload

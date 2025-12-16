@@ -54,39 +54,69 @@
                     v-if="!isEditing"
                     type="button"
                     class="icon-btn"
+                    aria-label="Edit review"
                     @click.stop="startEdit"
                     :disabled="busy"
                   >
-                    Edit
-                  </button>
-
-                  <button
-                    v-else
-                    type="button"
-                    class="icon-btn"
-                    @click.stop="cancelEdit"
-                    :disabled="busy"
-                  >
-                    Cancel
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm18-11.5a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75L21 5.75z"
+                        fill="currentColor"
+                      />
+                    </svg>
                   </button>
 
                   <button
                     v-if="isEditing"
                     type="button"
                     class="icon-btn primary"
+                    aria-label="Save review"
                     @click.stop="saveEdit"
                     :disabled="busy"
                   >
-                    Save
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M17 3H5a2 2 0 0 0-2 2v14l4-4h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </button>
+
+                  <button
+                    v-if="isEditing"
+                    type="button"
+                    class="icon-btn"
+                    aria-label="Cancel edit"
+                    @click.stop="cancelEdit"
+                    :disabled="busy"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M18 6L6 18M6 6l12 12"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+                    </svg>
                   </button>
 
                   <button
                     type="button"
                     class="icon-btn danger"
+                    aria-label="Delete review"
                     @click.stop="$emit('delete', review)"
                     :disabled="busy"
                   >
-                    Delete
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M6 7h12M9 7V5h6v2m-8 3v8m4-8v8m4-8v8M5 7l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        fill="none"
+                      />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -97,7 +127,15 @@
                 <span class="label">You rated</span>
 
                 <div v-if="!isEditing" class="rating-line">
-                  <span class="chip"> ⭐ {{ formatOneDecimal(review.user_rating) }}/10 </span>
+                  <span class="chip">
+                    <svg class="chip-star" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    {{ Math.round(review.user_rating ?? 0) }}/10
+                  </span>
 
                   <span
                     v-if="review.user_rating !== null && review.user_rating !== undefined"
@@ -245,11 +283,14 @@ const emit = defineEmits<{
 
 const isFlipped = ref(false)
 function toggleFlip() {
-  if (busy?.value) return
+  if (!isMobile.value) return
   if (isEditing.value) return
   isFlipped.value = !isFlipped.value
 }
+
 function handleCardClick(e: MouseEvent) {
+  if (!isMobile.value) return
+
   const el = e.target as HTMLElement | null
   if (!el) return
   if (el.closest('button, a, input, textarea, select, label')) return
@@ -300,7 +341,10 @@ const expanded = ref(false)
 
 function measureMobile() {
   isMobile.value = window.matchMedia('(max-width: 640px)').matches
-  if (!isMobile.value) expanded.value = false
+  if (!isMobile.value) {
+    expanded.value = false
+    isFlipped.value = false
+  }
 }
 
 onMounted(() => {
