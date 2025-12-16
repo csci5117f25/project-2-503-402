@@ -24,12 +24,11 @@ let searchTimeout: number | null = null
 watch(
   () => props.id,
   async (newId) => {
-    if(!newId && searchText.value.length > 1) {
+    if (!newId && searchText.value.length > 1) {
       console.log('delete')
       console.log(searchText.value)
       searchText.value = ''
-    }
-    else if (newId !== undefined) {
+    } else if (newId !== undefined) {
       try {
         const movie = await getMovie(newId)
         if (movie) {

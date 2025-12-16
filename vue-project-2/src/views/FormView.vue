@@ -61,9 +61,9 @@ async function handleSubmit(event: SubmitEvent) {
 
   await addUserReview(userId.value, movieId.value, review)
   console.log(`Submitted user review, user ${userId.value}`)
-  movieId.value = undefined;
-  rating.value = undefined;
-  comment.value = '';
+  movieId.value = undefined
+  rating.value = undefined
+  comment.value = ''
 }
 </script>
 

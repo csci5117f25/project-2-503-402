@@ -255,7 +255,11 @@ const yearStats = computed(() => {
 })
 
 /** ✅ Save from inline card editor */
-async function handleCardSave(payload: { movieId: number; rating: number | null; thoughts: string | null }) {
+async function handleCardSave(payload: {
+  movieId: number
+  rating: number | null
+  thoughts: string | null
+}) {
   if (!userId.value) return
 
   const { movieId, rating, thoughts } = payload
@@ -292,9 +296,7 @@ async function toggleRewatch(r: ReviewCardData) {
   const movieId = r.movieId
   const next = !r.rewatch
 
-  reviews.value = reviews.value.map((x) =>
-    x.movieId === movieId ? { ...x, rewatch: next } : x,
-  )
+  reviews.value = reviews.value.map((x) => (x.movieId === movieId ? { ...x, rewatch: next } : x))
 
   reviewSavingId.value = movieId
   try {
@@ -311,9 +313,7 @@ async function toggleRewatch(r: ReviewCardData) {
     await addUserReview(userId.value, movieId, payload)
   } catch (e) {
     console.error(e)
-    reviews.value = reviews.value.map((x) =>
-      x.movieId === movieId ? { ...x, rewatch: !next } : x,
-    )
+    reviews.value = reviews.value.map((x) => (x.movieId === movieId ? { ...x, rewatch: !next } : x))
   } finally {
     reviewSavingId.value = null
   }
@@ -421,7 +421,10 @@ watch(
 )
 
 const measureNavHeight = () => {
-  const nav = document.querySelector('header') || document.querySelector('nav') || document.querySelector('.navbar')
+  const nav =
+    document.querySelector('header') ||
+    document.querySelector('nav') ||
+    document.querySelector('.navbar')
   if (nav) navOffset.value = nav.getBoundingClientRect().height
 }
 

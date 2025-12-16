@@ -40,13 +40,7 @@
                 Edit
               </button>
 
-              <button
-                v-else
-                type="button"
-                class="icon-btn"
-                @click="cancelEdit"
-                :disabled="busy"
-              >
+              <button v-else type="button" class="icon-btn" @click="cancelEdit" :disabled="busy">
                 Cancel
               </button>
 
@@ -195,7 +189,6 @@ const isEditing = ref(false)
 const editRating = ref<number | null>(review.value.user_rating ?? null)
 const editThoughts = ref<string>(review.value.user_thoughts ?? '')
 
-    
 watch(
   () => review.value,
   (r) => {
