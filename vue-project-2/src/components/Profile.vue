@@ -1,12 +1,28 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useCurrentUser, useFirestore } from 'vuefire'
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
 import { Film, BarChart3, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+  
+  import VueQrcode from 'vue-qrcode'
+import { GetUserQrCode } from '@/qrcodes'
 
 const router = useRouter()
+
+
+const qrCodeValue = ref('')
+const qrDataUrl = ref('')
+
+function onDataUrlChange(data) {
+  qrDataUrl.value = data
+}
+
+async function genQrCode(userId) {
+  const qrData = await GetUserQrCode(userId)
+  qrCodeValue.value = qrData.value
+}
 
 const currentUser = useCurrentUser()
 const db = useFirestore()
@@ -52,6 +68,12 @@ function navigateToDraft(movieId: string, rating?: number, comment?: string) {
     },
   })
 }
+  
+  onMounted(() => {
+  if (user.value) {
+    genQrCode(user.value.uid)
+  }
+})
 
 // Calculate statistics when user changes
 watch(
@@ -62,6 +84,7 @@ watch(
       await fetchDraftReviews(newUser.uid)
     }
   },
+])
   { immediate: true },
 )
 
@@ -289,6 +312,12 @@ function closeMoviesList() {
         <div class="profile-info">
           <h1 class="user-name">{{ user.displayName }}</h1>
           <p class="user-email">{{ user.email }}</p>
+          <div class="qr-code-section">
+            <div v-if="qrCodeValue">
+              <VueQrcode :value="qrCodeValue" @change="onDataUrlChange" />
+              <a v-if="qrDataUrl" :href="qrDataUrl" download="movieprofile.png">Download QR</a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -387,4 +416,30 @@ function closeMoviesList() {
   </div>
 </template>
 
-<style scoped src="@/styles/profile.css"></style>
+<style scoped src="@/styles/profile.css">
+  .qr-code-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.qr-code-section canvas,
+.qr-code-section img {
+  width: 120px;
+  height: 120px;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  background: #f9fafb;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+.qr-code-section a {
+  font-size: 0.85rem;
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.qr-code-section a:hover {
+  text-decoration: underline;
+}
+</style>
