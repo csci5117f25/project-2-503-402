@@ -424,15 +424,7 @@
   padding: 1.25rem;
   border-radius: 1.25rem;
   transition: all 0.3s ease;
-  cursor: pointer;
   border: 1px solid transparent;
-}
-
-.movie-item:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
-  transform: translateX(8px);
-  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
 }
 
 .movie-item-poster {
@@ -446,10 +438,6 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-}
-
-.movie-item:hover .movie-item-poster {
-  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
 }
 
 .movie-item-poster img {
@@ -638,10 +626,6 @@
   font-size: 1.1rem;
 }
 
-/* ========================================
-   TABLET & MOBILE (≤768px)
-   ======================================== */
-
 @media (max-width: 768px) {
   .profile-container {
     padding: 5rem 1.25rem 3rem 1.25rem;
@@ -746,6 +730,9 @@
 
   .movie-item-info h3 {
     font-size: 1rem;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .movie-item-info p {
