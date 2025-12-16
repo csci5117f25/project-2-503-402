@@ -1,3 +1,11 @@
+<script setup>
+// import { useRoute } from 'vue-router'
+// const route = useRoute()
+defineProps({
+  id: String,
+})
+</script>
+
 <template>
-  <h1>We should land here after successfully scanning qr code</h1>
+  <h1>This is where we generate Report between {{ $route.params.id }} and current user</h1>
 </template>

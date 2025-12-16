@@ -47,16 +47,6 @@
             </div>
 
             <div class="metric">
-              <div class="metric-label">Recently watched</div>
-              <div class="metric-value metric-ellipsis" :title="yearStats.recentTitle">
-                {{ yearStats.recentTitle }}
-              </div>
-              <div class="metric-sub">
-                {{ yearStats.recentWhen }}
-              </div>
-            </div>
-
-            <div class="metric">
               <div class="metric-label">Rewatch</div>
               <div class="metric-value">{{ yearStats.rewatchCount }}</div>
               <div class="metric-sub">{{ yearStats.rewatchRate }}</div>
@@ -72,8 +62,8 @@
             :busy="reviewSavingId === review.movieId"
             :ref="(cmp) => setCardRef(cmp, index)"
             @save="handleCardSave"
-            @delete="confirmDelete"
-            @toggle-rewatch="toggleRewatch"
+            @delete="handleDelete"
+            @toggle-rewatch="handleToggleRewatch"
           />
         </div>
       </section>
@@ -126,12 +116,11 @@ type ReviewCardData = {
   budget: number | null
   genresText: string
 
-  user_rating: number | null
-  user_thoughts: string | null
+  user_rating: number
+  user_thoughts: string
   draft?: boolean
 
-  rewatch?: boolean | null
-  loggedAt?: any | null
+  rewatch?: boolean
   posterUrl?: string | null
 }
 
@@ -152,8 +141,8 @@ const isJumping = ref(false)
 const reviewSavingId = ref<number | null>(null)
 const currentYear = new Date().getFullYear()
 
-function setCardRef(cmp: any, index: number) {
-  const el = cmp?.$el as HTMLElement | undefined
+function setCardRef(cmp: unknown, index: number) {
+  const el = (cmp as { $el?: HTMLElement })?.$el
   if (el) cardRefs.value[index] = el
 }
 
@@ -166,29 +155,6 @@ function deltaValue(r: ReviewCardData) {
   if (r.user_rating === null || r.user_rating === undefined) return null
   if (r.rating_avg === null || r.rating_avg === undefined) return null
   return r.user_rating - r.rating_avg
-}
-
-function toDateMaybe(v: any): Date | null {
-  if (!v) return null
-  if (typeof v?.toDate === 'function') return v.toDate()
-  if (v instanceof Date) return v
-  if (typeof v === 'number') return new Date(v)
-  if (typeof v === 'string') {
-    const d = new Date(v)
-    return Number.isNaN(d.getTime()) ? null : d
-  }
-  return null
-}
-
-function timeAgo(d: Date | null): string {
-  if (!d) return '—'
-  const diff = Date.now() - d.getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins} min ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs} hr ago`
-  const days = Math.floor(hrs / 24)
-  return `${days} day${days === 1 ? '' : 's'} ago`
 }
 
 const yearStats = computed(() => {
@@ -216,17 +182,6 @@ const yearStats = computed(() => {
     }
   }
 
-  let recent: ReviewCardData | null = null
-  let recentDate: Date | null = null
-  for (const r of list) {
-    const d = toDateMaybe(r.loggedAt)
-    if (!d) continue
-    if (!recentDate || d.getTime() > recentDate.getTime()) {
-      recentDate = d
-      recent = r
-    }
-  }
-
   const rewatchCount = list.filter((r) => !!r.rewatch).length
   const rewatchRate =
     list.length > 0 ? `${Math.round((rewatchCount / list.length) * 100)}% rewatch` : '—'
@@ -246,9 +201,6 @@ const yearStats = computed(() => {
         ? favorite.user_rating.toFixed(1)
         : null,
 
-    recentTitle: recent?.title ?? '—',
-    recentWhen: recentDate ? timeAgo(recentDate) : 'Needs loggedAt',
-
     rewatchCount,
     rewatchRate,
   }
@@ -267,20 +219,20 @@ async function handleCardSave(payload: {
   try {
     const existing = reviews.value.find((r) => r.movieId === movieId)
     const rewatch = existing?.rewatch ?? false
-    const loggedAt = existing?.loggedAt ?? null
 
     const docPayload: UserReview = {
-      rating,
-      comment: thoughts,
+      rating: rating ?? 0,
+      comment: thoughts ?? '',
       draft: false,
       rewatch,
-      loggedAt,
     }
 
     await addUserReview(userId.value, movieId, docPayload)
 
     reviews.value = reviews.value.map((r) =>
-      r.movieId === movieId ? { ...r, user_rating: rating, user_thoughts: thoughts } : r,
+      r.movieId === movieId
+        ? { ...r, user_rating: rating ?? 0, user_thoughts: thoughts ?? '' }
+        : r,
     )
   } catch (e) {
     console.error(e)
@@ -289,7 +241,8 @@ async function handleCardSave(payload: {
   }
 }
 
-async function toggleRewatch(r: ReviewCardData) {
+async function handleToggleRewatch(payload: unknown) {
+  const r = payload as ReviewCardData
   if (!userId.value) return
 
   const movieId = r.movieId
@@ -301,15 +254,14 @@ async function toggleRewatch(r: ReviewCardData) {
   try {
     const updated = reviews.value.find((x) => x.movieId === movieId)
 
-    const payload: UserReview = {
-      rating: updated?.user_rating ?? null,
-      comment: updated?.user_thoughts ?? null,
+    const docPayload: UserReview = {
+      rating: updated?.user_rating ?? 0,
+      comment: updated?.user_thoughts ?? '',
       draft: false,
       rewatch: next,
-      loggedAt: updated?.loggedAt ?? null,
     }
 
-    await addUserReview(userId.value, movieId, payload)
+    await addUserReview(userId.value, movieId, docPayload)
   } catch (e) {
     console.error(e)
     reviews.value = reviews.value.map((x) => (x.movieId === movieId ? { ...x, rewatch: !next } : x))
@@ -318,7 +270,8 @@ async function toggleRewatch(r: ReviewCardData) {
   }
 }
 
-async function confirmDelete(r: ReviewCardData) {
+async function handleDelete(payload: unknown) {
+  const r = payload as ReviewCardData
   if (!userId.value) return
   const ok = window.confirm(`Delete your review for "${r.title}"?`)
   if (!ok) return
@@ -357,38 +310,46 @@ async function loadHomeReviews(uid: string) {
 
     const joined = await getUserMovieReviews(uid, movieIds)
 
-    const cards: ReviewCardData[] = joined
-      .map((item, idx) => {
-        if (!item) return null
+    const cards: ReviewCardData[] = []
 
-        const movieId = movieIds[idx]
-        const posterUrl = item.poster_path ? tmdbImageURL(item.poster_path) : null
-        const genresText = item.genres ? Object.values(item.genres).join(', ') : ''
+    for (let idx = 0; idx < joined.length; idx++) {
+      const item = joined[idx]
+      if (!item) continue
 
-        return {
-          movieId,
-          tagline: item.tagline ?? null,
-          title: item.title,
-          release_date: item.release_date,
-          runtime: item.runtime ?? null,
-          poster_path: item.poster_path ?? null,
-          rating_avg: item.rating_avg,
-          rating_count: item.rating_count,
-          budget: item.budget && item.budget > 0 ? item.budget : null,
-          genresText,
+      const movieId = movieIds[idx]
+      if (movieId === undefined) continue
 
-          user_rating: item.rating ?? null,
-          user_thoughts: item.comment ?? null,
-          draft: item.draft ?? false,
+      const posterUrl = item.poster_path ? tmdbImageURL(item.poster_path) : null
+      const genresText = item.genres ? Object.values(item.genres).join(', ') : ''
 
-          rewatch: (item as any).rewatch ?? false,
-          loggedAt:
-            (item as any).loggedAt ?? (item as any).updatedAt ?? (item as any).createdAt ?? null,
+      // Type assertion to access rewatch property
+      const itemWithRewatch = item as typeof item & { rewatch?: boolean }
 
-          posterUrl,
-        } satisfies ReviewCardData
-      })
-      .filter((x): x is ReviewCardData => !!x && !x.draft)
+      const card: ReviewCardData = {
+        movieId,
+        tagline: item.tagline ?? null,
+        title: item.title,
+        release_date: item.release_date,
+        runtime: item.runtime ?? null,
+        poster_path: item.poster_path ?? null,
+        rating_avg: item.rating_avg,
+        rating_count: item.rating_count,
+        budget: item.budget && item.budget > 0 ? item.budget : null,
+        genresText,
+
+        user_rating: item.rating,
+        user_thoughts: item.comment,
+        draft: item.draft ?? false,
+
+        rewatch: itemWithRewatch.rewatch ?? false,
+
+        posterUrl,
+      }
+
+      if (!card.draft) {
+        cards.push(card)
+      }
+    }
 
     reviews.value = cards
     cardRefs.value = []
@@ -455,7 +416,7 @@ const handleScroll = () => {
     if (dist < minDist) {
       minDist = dist
       closestIndex = index
-      closestId = reviews.value[index].movieId
+      closestId = reviews.value[index]?.movieId ?? null
     }
   })
 

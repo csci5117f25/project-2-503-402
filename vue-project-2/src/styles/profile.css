@@ -1,3 +1,30 @@
+ .qr-code-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.qr-code-section canvas,
+.qr-code-section img {
+  width: 120px;
+  height: 120px;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  background: #f9fafb;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+.qr-code-section a {
+  font-size: 0.85rem;
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.qr-code-section a:hover {
+  text-decoration: underline;
+}
+
+
 .profile-container {
   min-height: 100vh;
   max-width: 100%;
