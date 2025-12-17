@@ -1,5 +1,5 @@
 <script setup async lang="ts">
-import SimilarityReport from '@/components/Report/SimilarityReport.vue';
+import SingleSimilarityReport from '@/components/Report/SingleSimilarityReport.vue';
 import { db } from '@/firebase_conf';
 import { collection, } from 'firebase/firestore';
 import { computed, ref } from 'vue';
@@ -36,10 +36,10 @@ function handleActive(name: string) {
       class="drop-box"
     >
       <label class="label" @click="handleActive(report.uid)">You vs {{ report.name ?? report.uid }}</label>
-      <SimilarityReport v-if="active === report.uid"
+      <SingleSimilarityReport v-if="active === report.uid"
         :current="userId"
         :compare="report.uid"
-      ></SimilarityReport>
+      ></SingleSimilarityReport>
     </div>
   </div>
 

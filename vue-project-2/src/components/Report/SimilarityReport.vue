@@ -1,144 +1,54 @@
-<script setup lang="ts">
-import MovieCarousel from '@/components/Report/MovieCarousel.vue';
-// import MovieCompare from '@/components/Report/MovieCompare.vue';
-import { tmdbImageURL } from '@/movies';
-import { getUserSimilarities, type ReviewDiff } from '@/similarities'
-import { ref } from 'vue';
+<script setup async lang="ts">
+import SingleSimilarityReport from '@/components/Report/SingleSimilarityReport.vue';
+import { db } from '@/firebase_conf';
+import { collection, } from 'firebase/firestore';
+import { computed, ref } from 'vue';
+import {  useCollection, useCurrentUser } from 'vuefire';
 
-const props = defineProps({
-  current: {
-    type: String,
-    required: true
-  },
-  compare: {
-    type: String,
-    required: true
-  },
-  maxListings: {
-    type: Number,
-    default: 10
+
+// Testing uids
+// lucas1 LZbZsaWfRfO2q69nOSXFL6pW9PH2
+// lucas2 8MKabnDEswMX2nqapeiQsqRSCRm1
+// else wajaclA5vMNdTiPR3Zq0FL8lWv82
+
+const currentUser = useCurrentUser()
+const userId = computed(() => (currentUser.value?.uid ?? null))
+const reports = useCollection(computed(() => userId.value ? collection(db, `users/${userId.value}/reports`): null))
+const active = ref('')
+
+function handleActive(name: string) {
+  if(active.value !== '') {
+    active.value = '';
   }
-})
-
-interface CompareItem {
-  topImage: string,
-  bottomImage: string,
-  topRating: number,
-  bottomRating: number,
-  diff: number,
-  sim: number
-}
-
-interface SimStats {
-  overlapPct: number,
-  grade: string,
-  avg: number,
-  absAvg: number,
-  sameAvg: number,
-  diffAvg: number
-}
-
-const maxDiff = ref<CompareItem[]>()
-const minDiff = ref<CompareItem[]>()
-// const zeroDiff = ref<CompareItem[]>()
-const stats = ref<SimStats>()
-const ready = ref<boolean>(false)
-
-getUserSimilarities(props.current, props.compare, props.maxListings)
-.then(simReport => {
-
-  const mapFunc = (diff: ReviewDiff) => {
-    return {
-      topImage: tmdbImageURL(diff.current.poster_path) ?? '',
-      bottomImage: tmdbImageURL(diff.compare.poster_path) ?? '',
-      topRating: diff.current.rating,
-      bottomRating: diff.compare.rating,
-      diff: diff.diff,
-      sim: diff.sim
-    }
+  else {
+    active.value = name;
   }
-  stats.value = simReport as SimStats;
-  maxDiff.value = simReport.max.map(mapFunc);
-  minDiff.value = simReport.min.map(mapFunc);
-  // zeroDiff.value = simReport.same.map(mapFunc);
-  ready.value = true;
-})
+}
 </script>
 
+
 <template>
-  <transition name="expand">
-    <div class="report-body" v-if="ready">
 
-      <div v-if="stats" class="report-card">
-
-        <div class="columns is-vcentered">
-
-          <!-- Left-->
-          <div class="column is-one-third has-text-centered">
-            <p class="title is-4">Similarity Grade:</p>
-            <p class="title is-1 has-text-weight-bold has-text-success">
-              {{ stats.grade }}
-            </p>
-          </div>
-
-          <!-- Right -->
-          <div class="column is-two-thirds">
-            <div class="columns is-multiline">
-
-              <!-- First row -->
-              <div class="column is-half">
-                <p class="label">Overlap Percentage:</p>
-                <p class="subtitle is-6">{{ (stats.overlapPct * 100).toFixed(0) }}%</p>
-              </div>
-
-              <div class="column is-half">
-                <p class="label">Absolute Difference:</p>
-                <p class="subtitle is-6">{{ stats.absAvg.toFixed(2) }}</p>
-              </div>
-
-              <div class="column is-half">
-                <p class="label">Average Difference:</p>
-                <p class="subtitle is-6">{{ stats.avg.toFixed(2) }}</p>
-              </div>
-
-              <!-- <div class="column is-half">
-                <p class="label">Similar Difference:</p>
-                <p class="subtitle is-6">{{ stats.diffAvg.toFixed(2) }}</p>
-              </div> -->
-              <!-- Add more fields here if needed -->
-            </div>
-          </div>
-        </div>
-      </div>
-
+  <div v-if="typeof(userId) === 'string'">
+    <div
+      v-for="report in reports"
+      :key="report.name ? report.name: report.uid"
+      class="drop-box"
+    >
       <br>
-
-      <div v-if="minDiff">
-        <label class="title">Similar Movies You Rated Higher</label>
-        <hr>
-        <MovieCarousel :list="minDiff"></MovieCarousel>
-      </div>
-
-      <br>
-
-      <div v-if="maxDiff">
-        <label class="title">Similar Movies They Rated Higher</label>
-        <hr>
-        <MovieCarousel :list="maxDiff"></MovieCarousel>
-      </div>
+      <label class="label" @click="handleActive(report.uid)">You vs {{ report.name ?? report.uid }}</label>
+      <SingleSimilarityReport v-if="active === report.uid"
+        :current="userId"
+        :compare="report.uid"
+      ></SingleSimilarityReport>
     </div>
-  </transition>
+  </div>
+
 </template>
 
 <style scoped>
 
-  .report-body {
-    padding: 20px;
-    background: rgba(30, 30, 30, 0.88);
-    max-width: 920px;
-  }
-
-  .report-card {
+  .drop-box {
     background: rgba(30, 30, 30, 0.88);
     border-radius: 1.1rem;
     padding: 0.9rem;
@@ -148,26 +58,6 @@ getUserSimilarities(props.current, props.compare, props.maxListings)
     max-width: 920px;
   }
 
-  hr {
-    background-color: white;
-    margin: 5px;
-  }
-
-  /* Fade in  */
-  .expand-enter-active,
-  .expand-leave-active {
-    transition: all 0.4s ease;
-  }
-  .expand-enter-from,
-  .expand-leave-to {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-  }
-  .expand-enter-to,
-  .expand-leave-from {
-    max-height: 500px; /* adjust to content */
-    opacity: 1;
-  }
-
 </style>
+
+

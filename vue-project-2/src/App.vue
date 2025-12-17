@@ -57,7 +57,7 @@ async function logout() {
         <h1 class="logo">Movie Tracker</h1>
         <nav>
           <RouterLink to="/">Home</RouterLink>
-          <RouterLink to="/form">Form</RouterLink>
+          <RouterLink to="/form">Add Review</RouterLink>
           <RouterLink to="/report">Similarity Report</RouterLink>
           <RouterLink to="/profile">Profile</RouterLink>
         </nav>

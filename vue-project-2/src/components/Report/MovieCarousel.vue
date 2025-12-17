@@ -54,6 +54,7 @@ if(window.innerWidth < 968) {
       v-model="active"
       :data="list"
       :items-to-show="MAX_PER_PAGE"
+      :items-to-list="MAX_PER_PAGE"
       :arrow="true"
       :arrow-hover="true"
     >

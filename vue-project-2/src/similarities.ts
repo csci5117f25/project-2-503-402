@@ -238,7 +238,7 @@ export async function getUserSimilarities(
   currentUserId: string,
   compareUserId: string,
   maxComparisons = 5,
-  simMin = 0.75
+  simMin = 0.78
 ) {
   // Get both users' reviews
   const promises = [
@@ -304,7 +304,7 @@ export async function getUserSimilarities(
   const reviewStats: ReviewDiff[][] = [
     [],
     [],
-    // [],
+    [],
   ]
   for (let i = 0; i < simMat.length; i++) {
     const reviewDiffs: Array<ReviewDiff | undefined> = [undefined, undefined, undefined]
@@ -338,21 +338,21 @@ export async function getUserSimilarities(
         if(diff < 0)
           reviewDiffs[1] = review
       }
-      // if(!reviewDiffs[2] || Math.abs(diff) > reviewDiffs[2].diff) {  // Zero diff
-      //   reviewDiffs[2] = {
-      //     ...review,
-      //     diff:   Math.abs(diff)
-      //   }
-      // }
+      if(!reviewDiffs[2] && currentKeys[i]! === compareKeys[j]!) {  // Zero diff
+        reviewDiffs[2] = {
+          ...review,
+          diff:   diff
+        }
+      }
     }
 
     // Add to respective lists
     const diffCompare = [
       (a: ReviewDiff, b: ReviewDiff) => b.diff < a.diff,
       (a: ReviewDiff, b: ReviewDiff) => b.diff > a.diff,
-      // (a: ReviewDiff, b: ReviewDiff) => b.sim == a.sim
+      (a: ReviewDiff, b: ReviewDiff) => b.diff > a.diff
     ]
-    for(let i = 0; i < 2; i++) {
+    for(let i = 0; i < 3; i++) {
       if(reviewDiffs[i]) {
         diffInsert(reviewStats[i]!, reviewDiffs[i]!, diffCompare[i]!, simMaxLength)
       }
@@ -391,8 +391,10 @@ export async function getUserSimilarities(
     absAvg: absDiff,
     sameAvg: sameSum / sameTotal,
     diffAvg: diffSum / (currentKeys.length * compareKeys.length - sameTotal),
+    currentLength: currentKeys.length,
+    compareLength: compareKeys.length,
     min: reviewStats[0]?.reverse() as ReviewDiff[],
     max: reviewStats[1]?.reverse() as ReviewDiff[],
-    // same: reviewStats[2] as ReviewDiff[],
+    same: reviewStats[2] as ReviewDiff[],
   }
 }

@@ -1,7 +1,11 @@
 <script setup>
-import { ref } from 'vue'
+import SimilarityReport from '@/components/Report/SimilarityReport.vue'
+import { db } from '@/firebase_conf'
+import { doc, setDoc } from 'firebase/firestore'
+import { computed, ref, watch } from 'vue'
 // import { useRouter } from 'vue-router'
 import { QrcodeCapture, QrcodeStream } from 'vue-qrcode-reader'
+import { useCurrentUser } from 'vuefire'
 // import { onBeforeRouteUpdate } from 'vue-router'
 const defaultConstraintOptions = [
   { label: 'rear camera', constraints: { facingMode: 'environment' } },
@@ -11,6 +15,22 @@ const constraintOptions = ref(defaultConstraintOptions)
 
 // const router = useRouter()
 const result = ref('')
+
+// Add logic to auto-update similarity reports per user
+const currentUser = useCurrentUser()
+const userId = computed(() => (currentUser.value?.uid ?? null))
+watch(result, () => {
+  if(!userId.value || !result.value) {
+    return
+  }
+  // Set references to the reports in the respective users' firestores
+  // The similarity report uses useCollection, so automatically updated
+  setDoc(doc(db, `users/${userId.value}/reports/${result.value}`), { name: 'OTHER USER', uid: result.value})
+  setDoc(doc(db, `users/${result.value}/reports/${userId.value}`), { name: 'OTHER USER', uid: userId.value})
+})
+
+
+
 // const error = ref(null)
 // const paused = ref(false)
 const camera_ready = ref(false)
@@ -120,6 +140,7 @@ function onError(err) {
       </div>
     </div>
   </template>
+  <SimilarityReport></SimilarityReport>
 </template>
 
 <style scoped>

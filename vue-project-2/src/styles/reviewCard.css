@@ -51,7 +51,7 @@
 
 .poster-sq {
   width: 132px;
-  height: 132px;
+  height: 12.5vh;
   border-radius: 1rem;
   overflow: hidden;
   display: grid;
