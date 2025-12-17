@@ -565,3 +565,37 @@
     display: none !important;
   }
 }
+
+.edit-rating,
+.edit-thoughts,
+.flip-back-input,
+.flip-back-textarea {
+  background: rgba(17, 24, 39, 0.55);
+  color: #f9fafb;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.85rem;
+}
+
+.edit-rating::placeholder,
+.edit-thoughts::placeholder,
+.flip-back-input::placeholder,
+.flip-back-textarea::placeholder {
+  color: rgba(209, 213, 219, 0.7);
+}
+
+.edit-rating:focus,
+.edit-thoughts:focus,
+.flip-back-input:focus,
+.flip-back-textarea:focus {
+  outline: none;
+  border-color: rgba(239, 68, 68, 0.55);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.edit-rating:-webkit-autofill,
+.edit-thoughts:-webkit-autofill,
+.flip-back-input:-webkit-autofill,
+.flip-back-textarea:-webkit-autofill {
+  -webkit-text-fill-color: #f9fafb;
+  box-shadow: 0 0 0px 1000px rgba(17, 24, 39, 0.75) inset;
+}

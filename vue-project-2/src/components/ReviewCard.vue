@@ -3,10 +3,9 @@
     class="review-card flip-card"
     :class="{ flipped: isFlipped, expanded: expandedOnMobile }"
     @click="handleCardClick"
+    @keydown="handleKeydown"
     role="button"
     tabindex="0"
-    @keydown.enter.prevent="toggleFlip"
-    @keydown.space.prevent="toggleFlip"
     :aria-pressed="isFlipped"
   >
     <div class="flip-inner">
@@ -295,6 +294,19 @@ function handleCardClick(e: MouseEvent) {
   if (!el) return
   if (el.closest('button, a, input, textarea, select, label')) return
   toggleFlip()
+}
+
+// ✅ FIX: allow space inside textarea/input; only flip on Enter/Space when NOT focused on controls
+function handleKeydown(e: KeyboardEvent) {
+  if (!isMobile.value) return
+
+  const el = e.target as HTMLElement | null
+  if (el?.closest('button, a, input, textarea, select, label')) return
+
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    toggleFlip()
+  }
 }
 
 const isEditing = ref(false)
