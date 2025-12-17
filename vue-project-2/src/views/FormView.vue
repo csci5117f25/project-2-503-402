@@ -71,14 +71,13 @@ const previewCard = computed(() => {
   return {
     ...base,
     movieId: previewMovieId.value,
-    posterUrl: base.poster_path ? tmdbImageURL(base.poster_path) ?? '' : '',
+    posterUrl: base.poster_path ? (tmdbImageURL(base.poster_path) ?? '') : '',
     genresText: base.genres ? Object.values(base.genres).join(', ') : '',
     user_rating: previewUserRating.value ?? 0,
     user_thoughts: previewUserThoughts.value ?? '',
   }
 })
 </script>
-
 
 <template>
   <div class="form-page form-center">
@@ -87,11 +86,7 @@ const previewCard = computed(() => {
 
       <ReviewCard :review="previewCard" />
 
-      <FormCard
-        @update:movie="handleMovie"
-        @submit="handleSubmit"
-        @preview="handlePreview"
-      />
+      <FormCard @update:movie="handleMovie" @submit="handleSubmit" @preview="handlePreview" />
 
       <transition name="fade">
         <span v-if="successMsg">Submitted Successfully!</span>

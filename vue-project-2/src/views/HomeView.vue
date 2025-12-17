@@ -148,7 +148,6 @@ import {
   type UserReview,
 } from '@/movies'
 
-
 type ReviewCardData = {
   movieId: number
   title: string

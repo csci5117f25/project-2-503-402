@@ -63,7 +63,6 @@ async function onCameraReady() {
 function onError(err) {
   console.error(err)
 }
-
 </script>
 
 <template>
@@ -106,7 +105,6 @@ function onError(err) {
 
           <div v-if="mode === 'scan'" class="qr-scan">
             <div class="qr-camera">
-
               <QrcodeStream
                 @detect="onDetect"
                 @camera-on="onCameraReady"
@@ -115,9 +113,7 @@ function onError(err) {
                 :track="paintBoundingBox"
               />
 
-               <p class="qr-instruction">Use your camera to scan a QR code.</p>
-
-
+              <p class="qr-instruction">Use your camera to scan a QR code.</p>
             </div>
           </div>
         </div>
@@ -125,7 +121,6 @@ function onError(err) {
     </div>
   </template>
 </template>
-
 
 <style scoped>
 .qr-body {

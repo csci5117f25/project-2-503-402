@@ -2,20 +2,22 @@
 import MovieSearch from '@/components/MovieSearch.vue'
 import { useCurrentUser } from 'vuefire'
 import { computed, ref, onMounted, defineComponent, watch } from 'vue'
-import { addUserReview, getMovie, getUserMovieReview, type MovieData, type UserReview } from '@/movies'
+import {
+  addUserReview,
+  getMovie,
+  getUserMovieReview,
+  type MovieData,
+  type UserReview,
+} from '@/movies'
 import { useRoute } from 'vue-router'
-import vue3StarRatings from "vue3-star-ratings"
+import vue3StarRatings from 'vue3-star-ratings'
 import { Star } from 'lucide-vue-next'
 
 defineComponent({
-  components: { vue3StarRatings }
+  components: { vue3StarRatings },
 })
 
-const emit = defineEmits([
-  'update:movie',
-  'submit',
-  'preview', 
-])
+const emit = defineEmits(['update:movie', 'submit', 'preview'])
 
 const route = useRoute()
 
@@ -34,8 +36,6 @@ function handlePreview() {
     comment: comment.value ?? '',
   })
 }
-
-
 
 onMounted(async () => {
   if (route.query.movieId) movieId.value = parseInt(route.query.movieId as string)
@@ -103,7 +103,6 @@ async function handleSubmit(event: SubmitEvent) {
 }
 </script>
 
-
 <template>
   <div class="form-page-container">
     <div class="review-card">
@@ -158,9 +157,8 @@ async function handleSubmit(event: SubmitEvent) {
 
         <div class="field is-grouped isgrouped-center" style="margin-top: 20px">
           <p class="control">
-              <button class="button" type="button" @click="handlePreview">Preview</button>
-
-            </p>
+            <button class="button" type="button" @click="handlePreview">Preview</button>
+          </p>
           <p class="control">
             <button class="button" type="submit" value="post">Submit</button>
           </p>

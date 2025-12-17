@@ -86,7 +86,7 @@ function formatTitle(movie: MovieResultItem) {
           type="text"
           placeholder="Movie Title"
         />
-        <span class="icon is-small is-left"><Clapperboard color="black"/></span>
+        <span class="icon is-small is-left"><Clapperboard color="black" /></span>
       </div>
     </div>
     <div v-if="searchResults.length > 0" class="dropdown-menu" id="dropdown-menu" role="menu">
