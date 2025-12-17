@@ -53,7 +53,14 @@ METHODOLOGY
         diff closest to zero
 */
 
-const NUM_GENRES = 19
+export interface ReviewDiff {
+  diff: number,
+  sim: number,
+  current: UserMovieReview
+  compare: UserMovieReview,
+}
+
+const NUM_GENRES = 19;
 
 // List of genres from TMDB api
 export const genreMap: Record<number, string> = {
@@ -137,8 +144,7 @@ const genreSimilarityMatrix: number[][] = [
   [0.7, 0.9, 0.6, 0.4, 0.1, -0.6, 0.5, 0.7, 1.0, 0.3, 0.5, 0.3, 0.4, 0.5, 0.9, 0.3, 0.6, 0.4, 0.6],
   // History
   [
-    0.5, 0.5, -0.3, -0.2, 0.3, 0.8, 0.7, -0.3, 0.3, 1.0, -0.2, 0.2, 0.3, 0.4, 0.2, 0.1, 0.3, 0.9,
-    0.4,
+    0.5, 0.5, -0.3, -0.2, 0.3, 0.8, 0.7, -0.3, 0.3, 1.0, -0.2, 0.2, 0.3, 0.4, 0.2, 0.1, 0.3, 0.9,0.4,
   ],
   // Horror
   [
@@ -167,7 +173,9 @@ const genreSimilarityMatrix: number[][] = [
   ],
   // Western
   [0.8, 0.7, 0.1, 0.2, 0.2, -0.6, 0.5, 0.2, 0.6, 0.4, 0.3, 0.3, 0.3, 0.3, 0.6, 0.2, 0.4, 0.5, 1.0],
-]
+];
+
+
 
 // Get similarity factor between movies
 // Scaled between -1 and 1  (see above matrix)
@@ -198,7 +206,7 @@ export function getMovieSimilarityMatrix(
       }
       sim += dot * vin[i]!
     }
-    return Math.max(-1, Math.min(1, sim)) // clamp to [-1,1]
+    return (Math.max(-1, Math.min(1, sim)) + 1) / 2
   }
 
   // Build review matricies
@@ -216,25 +224,9 @@ export function getMovieSimilarityMatrix(
   for (let i = 0; i < currentReviews.length; i++) {
     const simRow = []
     for (let j = 0; j < compareReviews.length; j++) {
-      simRow.push(getSim(currentMat[i]!, currentMat[j]!))
+      simRow.push(getSim(currentMat[i]!, compareMat[j]!))
     }
     simMat.push(simRow)
-  }
-  return simMat
-}
-
-// Get difference between two user movie reviews (scaled by genre similarity)
-export async function getReviewDiffMatrix(
-  currentReviews: UserMovieReview[],
-  compareReview: UserMovieReview[],
-) {
-  // Multiply similarity matrix by difference
-  const simMat = getMovieSimilarityMatrix(currentReviews, compareReview)
-  for (let i = 0; i < currentReviews.length; i++) {
-    for (let j = 0; j < compareReview.length; j++) {
-      const simFactor = (1 + simMat[i]![j]!) / 2
-      simMat[i]![j] = (currentReviews[i]!.rating - compareReview[j]!.rating) * simFactor
-    }
   }
   return simMat
 }
@@ -246,6 +238,7 @@ export async function getUserSimilarities(
   currentUserId: string,
   compareUserId: string,
   maxComparisons = 5,
+  simMin = 0.75
 ) {
   // Get both users' reviews
   const promises = [
@@ -253,20 +246,14 @@ export async function getUserSimilarities(
     getAllUserMovieReviewsObject(compareUserId),
   ]
   const reviews = await Promise.all(promises)
-  const currentReviews = reviews[0]
-  const compareReviews = reviews[1]
-  if (!currentReviews || !compareReviews)
+  if(!reviews[0] || !reviews[1])
     throw new Error('[getUserSimilarities] - Unable to get user movie reviews')
-
-  const currentKeys = Object.keys(currentReviews)
-  const compareKeys = Object.keys(compareReviews)
+  const currentKeys = Object.keys(reviews[0])
+  const compareKeys = Object.keys(reviews[1])
+  const currentReviews = Object.values(reviews[0])
+  const compareReviews = Object.values(reviews[1])
 
   // Helpers for storing / sorting review data
-  interface ReviewDiff {
-    diff: number
-    current: UserMovieReview
-    compare: UserMovieReview
-  }
   // Sorted insert of a ReviewDiff variable into the given reviews list
   const diffInsert = (
     reviews: ReviewDiff[],
@@ -278,18 +265,16 @@ export async function getUserSimilarities(
     for (; i >= 0; i--) {
       if (compare(review, reviews[i]!)) {
         if (i === maxComparisons - 1) {
-          return reviews // Don't append to full list
+          return reviews  // Don't append to full list
         }
         reviews.splice(i + 1, 0, review)
         break
       }
     }
-    if (i === -1) {
-      // Insert if empty / first index
+    if (i === -1) {     // Insert if empty / first index
       reviews.splice(0, 0, review)
     }
-    if (reviews.length > maxLength) {
-      // Pop if over capacity
+    if (reviews.length > maxLength) {   // Pop if over capacity
       reviews.pop()
     }
     return reviews
@@ -298,7 +283,13 @@ export async function getUserSimilarities(
   // Find overlapping IDs
   const sameIds = currentKeys.filter((key) => compareKeys.includes(key))
   const overlapPct = sameIds.length / (currentKeys.length + compareKeys.length - sameIds.length)
-  const sameTotal = sameIds.length
+  const sameTotal = sameIds.length;
+
+  // Get similarity matrix
+  const simMat = getMovieSimilarityMatrix(
+    currentReviews,
+    compareReviews
+  )
 
   // Loop over all review combinations, calc stats
   let sameSum = 0
@@ -306,41 +297,65 @@ export async function getUserSimilarities(
   let totalSum = 0
   let absSum = 0
   const simMaxLength = Math.max(maxComparisons, sameTotal)
-  const sameMax: ReviewDiff[] = []
-  const sameMin: ReviewDiff[] = []
-  const sameZero: ReviewDiff[] = []
-  const maxReviews: ReviewDiff[] = []
-  const minReviews: ReviewDiff[] = []
-  const zeroReviews: ReviewDiff[] = []
-  const diffMat = await getReviewDiffMatrix(
-    Object.values(currentReviews),
-    Object.values(compareReviews),
-  )
-  for (let i = 0; i < diffMat.length; i++) {
-    for (let j = 0; j < diffMat[0]!.length; j++) {
-      const diff = diffMat[i]![j]!
-      const currentKey = currentKeys[i]!
-      const compareKey = compareKeys[j]!
+
+  // INDICES
+  // 0 - diff min, 1 - diff max, 2 - diff zero
+  // 3 - same min, 4 - same max
+  const reviewStats: ReviewDiff[][] = [
+    [],
+    [],
+    // [],
+  ]
+  for (let i = 0; i < simMat.length; i++) {
+    const reviewDiffs: Array<ReviewDiff | undefined> = [undefined, undefined, undefined]
+    for (let j = 0; j < simMat[0]!.length; j++) {
+      const simFactor = simMat[i]![j]!
+      if(simFactor < simMin)
+        continue;
+
+      const diff = (currentReviews[i]!.rating - compareReviews[j]!.rating);
       const review: ReviewDiff = {
         diff: diff,
-        current: currentReviews[currentKey]!,
-        compare: compareReviews[compareKey]!,
+        sim: simFactor,
+        current: currentReviews[i]!,
+        compare: compareReviews[j]!,
       }
 
-      // Separate results by same movie or not
-      if (currentKey === compareKey) {
-        diffInsert(sameMax, review, (a, b) => b.diff > a.diff, simMaxLength)
-        diffInsert(sameMin, review, (a, b) => b.diff < a.diff, simMaxLength)
-        diffInsert(sameZero, review, (a, b) => Math.abs(b.diff) < Math.abs(a.diff), simMaxLength)
-        sameSum += diff
-      } else {
-        diffInsert(maxReviews, review, (a, b) => b.diff > a.diff)
-        diffInsert(minReviews, review, (a, b) => b.diff < a.diff)
-        diffInsert(zeroReviews, review, (a, b) => Math.abs(b.diff) < Math.abs(a.diff))
-        diffSum += diff
+      totalSum += diff;
+      absSum += Math.abs(diff);
+      if(currentKeys[i] === compareKeys[j]) {
+        sameSum += diff;
       }
-      totalSum += diff
-      absSum += Math.abs(diff)
+      else {
+        diffSum += diff;
+      }
+
+      if(!reviewDiffs[0] || diff > reviewDiffs[0].diff) {    // Max diff
+        if(diff > 0)
+          reviewDiffs[0] = review
+      }
+      if(!reviewDiffs[1] || diff < reviewDiffs[1].diff) {    // Min diff
+        if(diff < 0)
+          reviewDiffs[1] = review
+      }
+      // if(!reviewDiffs[2] || Math.abs(diff) > reviewDiffs[2].diff) {  // Zero diff
+      //   reviewDiffs[2] = {
+      //     ...review,
+      //     diff:   Math.abs(diff)
+      //   }
+      // }
+    }
+
+    // Add to respective lists
+    const diffCompare = [
+      (a: ReviewDiff, b: ReviewDiff) => b.diff < a.diff,
+      (a: ReviewDiff, b: ReviewDiff) => b.diff > a.diff,
+      // (a: ReviewDiff, b: ReviewDiff) => b.sim == a.sim
+    ]
+    for(let i = 0; i < 2; i++) {
+      if(reviewDiffs[i]) {
+        diffInsert(reviewStats[i]!, reviewDiffs[i]!, diffCompare[i]!, simMaxLength)
+      }
     }
   }
 
@@ -371,20 +386,13 @@ export async function getUserSimilarities(
   // Bundle and return
   return {
     overlapPct: overlapPct,
+    grade: similarityGrade,
     avg: totalSum / currentKeys.length / compareKeys.length,
     absAvg: absDiff,
-    grade: similarityGrade,
-    overlap: {
-      avg: sameSum / sameTotal,
-      max: sameMax,
-      min: sameMin,
-      zero: sameZero,
-    },
-    diff: {
-      avg: diffSum / (currentKeys.length * compareKeys.length - sameTotal),
-      max: maxReviews,
-      min: minReviews,
-      zero: zeroReviews,
-    },
+    sameAvg: sameSum / sameTotal,
+    diffAvg: diffSum / (currentKeys.length * compareKeys.length - sameTotal),
+    min: reviewStats[0]?.reverse() as ReviewDiff[],
+    max: reviewStats[1]?.reverse() as ReviewDiff[],
+    // same: reviewStats[2] as ReviewDiff[],
   }
 }
