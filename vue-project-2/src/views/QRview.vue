@@ -1,87 +1,90 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-
-const defaultConstraintOptions = [
-  { label: 'rear camera', constraints: { facingMode: 'environment' } },
-  { label: 'front camera', constraints: { facingMode: 'user' } },
-]
-const constraintOptions = ref(defaultConstraintOptions)
+import { QrcodeCapture } from 'vue-qrcode-reader'
+// import { onBeforeRouteUpdate } from 'vue-router'
+// const defaultConstraintOptions = [
+//   { label: 'rear camera', constraints: { facingMode: 'environment' } },
+//   { label: 'front camera', constraints: { facingMode: 'user' } },
+// ]
+// const constraintOptions = ref(defaultConstraintOptions)
 
 const router = useRouter()
 const result = ref('')
-const error = ref(null)
-const paused = ref(false)
-const camera_ready = ref(false)
+// const error = ref(null)
+// const paused = ref(false)
+// const camera_ready = ref(false)
 
-function handleSubmit() {
-  router.push({ name: 'report', params: { id: result?.value } })
-}
+// const mode = ref('')
+
+// function handleSubmit() {
+//   router.push({ name: 'report', params: { id: result?.value } })
+// }
 
 function onDetect(detectedCodes) {
   console.log(detectedCodes[0].rawValue)
   // result.value = JSON.stringify(detectedCodes.map((code) => code.rawValue))
   result.value = detectedCodes[0].rawValue
-  paused.value = true
+ router.push({ name: 'report', params: { id: result?.value } })
 }
 
-// the next 3 functions are from: https://gruhn.github.io/vue-qrcode-reader/demos/FullDemo.html
-function paintBoundingBox(detectedCodes, ctx) {
-  for (const detectedCode of detectedCodes) {
-    const {
-      boundingBox: { x, y, width, height },
-    } = detectedCode
+// // the next 3 functions are from: https://gruhn.github.io/vue-qrcode-reader/demos/FullDemo.html
+// function paintBoundingBox(detectedCodes, ctx) {
+//   for (const detectedCode of detectedCodes) {
+//     const {
+//       boundingBox: { x, y, width, height },
+//     } = detectedCode
 
-    ctx.lineWidth = 2
-    ctx.strokeStyle = '#007bff'
-    ctx.strokeRect(x, y, width, height)
-  }
-}
+//     ctx.lineWidth = 2
+//     ctx.strokeStyle = '#007bff'
+//     ctx.strokeRect(x, y, width, height)
+//   }
+// }
 
-async function onCameraReady() {
-  // NOTE: on iOS we can't invoke `enumerateDevices` before the user has given
-  // camera access permission. `QrcodeStream` internally takes care of
-  // requesting the permissions. The `camera-on` event should guarantee that this
-  // has happened.
+// async function onCameraReady() {
+//   // NOTE: on iOS we can't invoke `enumerateDevices` before the user has given
+//   // camera access permission. `QrcodeStream` internally takes care of
+//   // requesting the permissions. The `camera-on` event should guarantee that this
+//   // has happened.
 
-  const devices = await navigator.mediaDevices.enumerateDevices()
-  const videoDevices = devices.filter(({ kind }) => kind === 'videoinput')
+//   const devices = await navigator.mediaDevices.enumerateDevices()
+//   const videoDevices = devices.filter(({ kind }) => kind === 'videoinput')
 
-  constraintOptions.value = [
-    ...defaultConstraintOptions,
-    ...videoDevices.map(({ deviceId, label }) => ({
-      label: `${label} (ID: ${deviceId})`,
-      constraints: { deviceId },
-    })),
-  ]
+//   constraintOptions.value = [
+//     ...defaultConstraintOptions,
+//     ...videoDevices.map(({ deviceId, label }) => ({
+//       label: `${label} (ID: ${deviceId})`,
+//       constraints: { deviceId },
+//     })),
+//   ]
 
-  error.value = ''
-  camera_ready.value = true
-}
+//   // error.value = ''
+//   camera_ready.value = true
+// }
 
-function onError(err) {
-  error.value = `[${err.name}]: `
-  if (err.name === 'NotAllowedError') {
-    error.value += 'you need to grant camera access permission'
-  } else if (err.name === 'NotFoundError') {
-    error.value += 'no camera on this device'
-  } else if (err.name === 'NotSupportedError') {
-    error.value += 'secure context required (HTTPS, localhost)'
-  } else if (err.name === 'NotReadableError') {
-    error.value += 'is the camera already in use?'
-  } else if (err.name === 'OverconstrainedError') {
-    error.value += 'installed cameras are not suitable'
-  } else if (err.name === 'StreamApiNotSupportedError') {
-    error.value += 'Stream API is not supported in this browser'
-  } else if (err.name === 'InsecureContextError') {
-    error.value +=
-      'Camera access is only permitted in secure context. Use HTTPS or localhost rather than HTTP.'
-  } else {
-    error.value += err.message
-  }
+// function onError(err) {
+//   // error.value = `[${err.name}]: `
+//   // if (err.name === 'NotAllowedError') {
+//   //   error.value += 'you need to grant camera access permission'
+//   // } else if (err.name === 'NotFoundError') {
+//   //   error.value += 'no camera on this device'
+//   // } else if (err.name === 'NotSupportedError') {
+//   //   error.value += 'secure context required (HTTPS, localhost)'
+//   // } else if (err.name === 'NotReadableError') {
+//   //   error.value += 'is the camera already in use?'
+//   // } else if (err.name === 'OverconstrainedError') {
+//   //   error.value += 'installed cameras are not suitable'
+//   // } else if (err.name === 'StreamApiNotSupportedError') {
+//   //   error.value += 'Stream API is not supported in this browser'
+//   // } else if (err.name === 'InsecureContextError') {
+//   //   error.value +=
+//   //     'Camera access is only permitted in secure context. Use HTTPS or localhost rather than HTTP.'
+//   // } else {
+//   //   error.value += err.message
+//   // }
 
-  console.error(err)
-}
+//   console.error(err)
+// }
 
 // onBeforeRouteUpdate(() => {
 //   result.value = null
@@ -91,19 +94,27 @@ function onError(err) {
 
 <template>
   <div class="qr-body">
-    <div class="qr-text">
+    <!-- <div class="qr-text">
       <div v-if="result">
         <p class="decode-result">
           Last result: <b>{{ result }}</b>
         </p>
         <button @click="handleSubmit">See report</button>
       </div>
+    </div> -->
+
+    <div class="qr-section">
+     <QrcodeCapture @detect="onDetect" />
     </div>
 
-    <div class="qr-camera">
+    <!-- <div class="qr-camera">
       <div class="camera-overlay" v-if="!camera_ready">
-        <!-- <span>Enable camera</span> -->
+        <span>Enable camera</span>
       </div>
+
+      <QrcodeStream @detect="onDetect" @camera-on="onCameraReady" @error="onError" :paused="paused" :track="paintBoundingBox">
+        idk
+      </QrcodeStream>
       <qrcode-stream
         class="qr-stream"
         :class="{ 'qr-stream--hidden': !camera_ready }"
@@ -113,7 +124,7 @@ function onError(err) {
         @detect="onDetect"
         @camera-on="onCameraReady"
       />
-    </div>
+    </div> -->
   </div>
 </template>
 
