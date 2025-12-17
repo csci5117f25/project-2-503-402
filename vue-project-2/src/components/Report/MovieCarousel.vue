@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import MovieCompare from '@/components/Report/MovieCompare.vue';
 import { BCarouselList } from 'buefy'
+import MovieCompareKey from './MovieCompareKey.vue';
+import { ChevronLeft, ChevronRight, Pause } from 'lucide-vue-next';
+import { ref } from 'vue';
 
 
 interface CompareItem {
@@ -19,15 +22,38 @@ defineProps({
   }
 })
 
+// SET THIS for max elements visible on static
+// ALSO need to change width of carousel container...
+const MAX_PER_PAGE = ref(5)
+const active = ref(0)
+
+if(window.innerWidth < 968) {
+  MAX_PER_PAGE.value = 2
+}
+
+// TODO if time move movieCompare to here, no need for that component
+
 </script>
 
 <template>
 
   <div class="carousel-container">
+    <MovieCompareKey
+      topImage=""
+      bottomImage=""
+      :topRating="99"
+      :bottomRating="0"
+      :diff="1"
+      :sim="0"
+    ></MovieCompareKey>
+
+    <ChevronLeft v-if="active > 0" @click="active--" :size="60" />
+    <Pause v-else :size="45"></Pause>
+
     <BCarouselList
+      v-model="active"
       :data="list"
-      :items-to-show="5"
-      :items-to-list="3"
+      :items-to-show="MAX_PER_PAGE"
       :arrow="true"
       :arrow-hover="true"
     >
@@ -42,47 +68,29 @@ defineProps({
         />
       </template>
     </BCarouselList>
+
+    <ChevronRight v-if="active < list.length - MAX_PER_PAGE" @click="active++" :size="60"/>
+    <Pause v-else :size="45"></Pause>
+
   </div>
 
 </template>
 
 <style scoped>
 
-  .poster-img {
-    margin: 5px;
-    height: 12.5vh;
-    border: 2px solid white;
-    border-radius: 5px;
-  }
-
-  .label {
-    margin-bottom: 0 !important;
-  }
-
-  .center-div {
-    display: flex;
-    background-color: white;
-    width: 90%;
-    height: 90%;
-    min-height: 20vh;
-    margin: auto;
-    padding: 100px;
-  }
-
-  .compare-slot {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    background: rgba(30, 30, 30, 0.8);
-    min-height: 30vh;
-    margin: auto;
-    padding: 10px;
-    border-radius: 10px;
-  }
-
   .carousel-container {
-    width: 55vh;
+    display: flex;
+    flex-direction: row;
+    width: 70vh;
+    gap: 10px;
   }
+
+  @media (max-width: 968px) {
+    .carousel-container {
+      width: 40vh;
+    }
+  }
+
 
 
 </style>

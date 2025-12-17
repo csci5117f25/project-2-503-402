@@ -304,7 +304,7 @@ export async function getUserSimilarities(
   const reviewStats: ReviewDiff[][] = [
     [],
     [],
-    [],
+    // [],
   ]
   for (let i = 0; i < simMat.length; i++) {
     const reviewDiffs: Array<ReviewDiff | undefined> = [undefined, undefined, undefined]
@@ -331,26 +331,28 @@ export async function getUserSimilarities(
       }
 
       if(!reviewDiffs[0] || diff > reviewDiffs[0].diff) {    // Max diff
-        reviewDiffs[0] = review
+        if(diff > 0)
+          reviewDiffs[0] = review
       }
       if(!reviewDiffs[1] || diff < reviewDiffs[1].diff) {    // Min diff
-        reviewDiffs[1] = review
+        if(diff < 0)
+          reviewDiffs[1] = review
       }
-      if(!reviewDiffs[2] || Math.abs(diff) > reviewDiffs[2].diff) {  // Zero diff
-        reviewDiffs[2] = {
-          ...review,
-          diff:   Math.abs(diff)
-        }
-      }
+      // if(!reviewDiffs[2] || Math.abs(diff) > reviewDiffs[2].diff) {  // Zero diff
+      //   reviewDiffs[2] = {
+      //     ...review,
+      //     diff:   Math.abs(diff)
+      //   }
+      // }
     }
 
     // Add to respective lists
     const diffCompare = [
-      (a: ReviewDiff, b: ReviewDiff) => b.sim < a.sim,
-      (a: ReviewDiff, b: ReviewDiff) => b.sim > a.sim,
-      (a: ReviewDiff, b: ReviewDiff) => b.sim == a.sim
+      (a: ReviewDiff, b: ReviewDiff) => b.diff < a.diff,
+      (a: ReviewDiff, b: ReviewDiff) => b.diff > a.diff,
+      // (a: ReviewDiff, b: ReviewDiff) => b.sim == a.sim
     ]
-    for(let i = 0; i < 3; i++) {
+    for(let i = 0; i < 2; i++) {
       if(reviewDiffs[i]) {
         diffInsert(reviewStats[i]!, reviewDiffs[i]!, diffCompare[i]!, simMaxLength)
       }
@@ -389,8 +391,8 @@ export async function getUserSimilarities(
     absAvg: absDiff,
     sameAvg: sameSum / sameTotal,
     diffAvg: diffSum / (currentKeys.length * compareKeys.length - sameTotal),
-    min: reviewStats[0] as ReviewDiff[],
-    max: reviewStats[1] as ReviewDiff[],
-    same: reviewStats[2] as ReviewDiff[],
+    min: reviewStats[0]?.reverse() as ReviewDiff[],
+    max: reviewStats[1]?.reverse() as ReviewDiff[],
+    // same: reviewStats[2] as ReviewDiff[],
   }
 }

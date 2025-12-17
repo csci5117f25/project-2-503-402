@@ -1,93 +1,64 @@
-<script setup lang="ts">
-import MovieCarousel from '@/components/Report/MovieCarousel.vue';
-// import MovieCompare from '@/components/Report/MovieCompare.vue';
-import { tmdbImageURL } from '@/movies';
-import { getUserSimilarities, type ReviewDiff } from '@/similarities'
-import { ref } from 'vue';
+<script setup async lang="ts">
+import SimilarityReport from '@/components/Report/SimilarityReport.vue';
+import { db } from '@/firebase_conf';
+import { collection, } from 'firebase/firestore';
+import { computed, ref } from 'vue';
+import {  useCollection, useCurrentUser } from 'vuefire';
 
 
-interface CompareItem {
-  topImage: string,
-  bottomImage: string,
-  topRating: number,
-  bottomRating: number,
-  diff: number,
-  sim: number
-}
-
-const maxDiff = ref<CompareItem[]>([])
-const minDiff = ref<CompareItem[]>([])
-const zeroDiff = ref<CompareItem[]>([])
-
+// Testing uids
 // lucas1 LZbZsaWfRfO2q69nOSXFL6pW9PH2
 // lucas2 8MKabnDEswMX2nqapeiQsqRSCRm1
 // else wajaclA5vMNdTiPR3Zq0FL8lWv82
 
-getUserSimilarities('LZbZsaWfRfO2q69nOSXFL6pW9PH2', '8MKabnDEswMX2nqapeiQsqRSCRm1', 10)
-.then(simReport => {
+const currentUser = useCurrentUser()
+const userId = computed(() => (currentUser.value?.uid ?? null))
+const reports = useCollection(computed(() => userId.value ? collection(db, `users/${userId.value}/reports`): null))
+const active = ref('')
 
-  const mapFunc = (diff: ReviewDiff) => {
-    return {
-      topImage: tmdbImageURL(diff.current.poster_path) ?? '',
-      bottomImage: tmdbImageURL(diff.compare.poster_path) ?? '',
-      topRating: diff.current.rating,
-      bottomRating: diff.compare.rating,
-      diff: diff.diff,
-      sim: diff.sim
-    }
+function handleActive(name: string) {
+  if(active.value !== '') {
+    active.value = '';
   }
-  maxDiff.value = simReport.max.map(mapFunc);
-  minDiff.value = simReport.min.map(mapFunc);
-  zeroDiff.value = simReport.same.map(mapFunc);
-
-})
+  else {
+    active.value = name;
+  }
+}
 </script>
 
+
 <template>
-  <label class="label">Min difference</label>
-  <MovieCarousel :list="minDiff"></MovieCarousel>
-  <label class="label">Max difference</label>
-  <MovieCarousel :list="maxDiff"></MovieCarousel>
+
+  <div v-if="typeof(userId) === 'string'">
+    <div
+      v-for="report in reports"
+      :key="report.name ? report.name: report.uid"
+      class="drop-box"
+    >
+      <label class="label" @click="handleActive(report.uid)">You vs {{ report.name ?? report.uid }}</label>
+      <SimilarityReport v-if="active === report.uid"
+        :current="userId"
+        :compare="report.uid"
+      ></SimilarityReport>
+    </div>
+  </div>
+
 </template>
 
 <style scoped>
 
-  .poster-img {
-    margin: 5px;
-    height: 12.5vh;
-    border: 2px solid white;
-    border-radius: 5px;
+  .drop-box {
+    background: rgba(30, 30, 30, 0.88);
+    border-radius: 1.1rem;
+    padding: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(18px);
+    max-width: 920px;
   }
 
-  .label {
-    margin-bottom: 0 !important;
-  }
-
-  .center-div {
-    display: flex;
-    background-color: white;
-    width: 90%;
-    height: 90%;
-    min-height: 20vh;
-    margin: auto;
-    padding: 100px;
-  }
-
-  .compare-slot {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    background: rgba(30, 30, 30, 0.8);
-    min-height: 30vh;
-    margin: auto;
-    padding: 10px;
-    border-radius: 10px;
-  }
-
-  .carousel-container {
-    width: 55vh;
-  }
 
 
 </style>
+
 

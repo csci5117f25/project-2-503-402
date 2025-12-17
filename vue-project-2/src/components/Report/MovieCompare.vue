@@ -27,7 +27,6 @@ defineProps({
     required: true
   }
 })
-
 </script>
 
 <template>
@@ -51,7 +50,7 @@ defineProps({
         <ChevronsDown class="has-text-danger"/>
       </span>
     </label>
-    {{ sim.toFixed(2) + '%' }}
+    {{ (sim * 100).toFixed(0) }}%
     <img class="poster-img" :src="bottomImage">
 
     <label class="label is-inline-flex is-justify-content-center is-align-items-center">
@@ -62,38 +61,4 @@ defineProps({
   </div>
 </template>
 
-<style scoped>
-
-  .poster-img {
-    margin: 5px;
-    height: 12.5vh;
-    border: 2px solid white;
-    border-radius: 5px;
-  }
-
-  .label {
-    margin-bottom: 0 !important;
-  }
-
-  .center-div {
-    display: flex;
-    background-color: white;
-    width: 90%;
-    height: 90%;
-    min-height: 20vh;
-    margin: auto;
-    padding: 100px;
-  }
-
-  .compare-slot {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    background: rgba(30, 30, 30, 0.8);
-    min-height: 30vh;
-    width: 10vh;
-    margin: auto;
-    padding: 10px;
-    border-radius: 10px;
-  }
-</style>
+<style scoped src="@/styles/movieCompare.css"></style>
