@@ -45,7 +45,6 @@ function resetForm() {
   selectedMovie.value = null
 
   emit('cleared')
-
   emit('preview', { movieId: null, movie: null, rating: null, comment: null })
 }
 
@@ -161,7 +160,7 @@ function handleClearClick() {
                   max="10"
                 />
                 <span class="icon is-small is-left">
-                  <Star color="black" />
+                  <Star color="#e5e7eb" />
                 </span>
               </div>
             </div>
@@ -213,3 +212,52 @@ function handleClearClick() {
 </template>
 
 <style scoped src="@/styles/reviewCard.css"></style>
+
+<style scoped>
+.bulma-input,
+.input.bulma-input,
+.textarea.bulma-input {
+  background: rgba(15, 23, 42, 0.55) !important; 
+  color: #f3f4f6 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: none !important;
+}
+
+.bulma-input::placeholder,
+.input.bulma-input::placeholder,
+.textarea.bulma-input::placeholder {
+  color: rgba(243, 244, 246, 0.45) !important;
+}
+
+.bulma-input:focus,
+.input.bulma-input:focus,
+.textarea.bulma-input:focus {
+  outline: none !important;
+  border-color: rgba(239, 68, 68, 0.6) !important; /* red focus */
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18) !important;
+}
+
+.control.has-icons-left .icon {
+  color: #e5e7eb !important;
+}
+
+.form-page-container :deep(input[type='text']),
+.form-page-container :deep(input[type='search']) {
+  background: rgba(15, 23, 42, 0.55) !important;
+  color: #f3f4f6 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: none !important;
+}
+
+.form-page-container :deep(input[type='text']::placeholder),
+.form-page-container :deep(input[type='search']::placeholder) {
+  color: rgba(243, 244, 246, 0.45) !important;
+}
+
+.form-page-container :deep(input[type='text']:focus),
+.form-page-container :deep(input[type='search']:focus) {
+  outline: none !important;
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18) !important;
+}
+</style>
