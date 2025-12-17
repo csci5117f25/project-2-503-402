@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import MovieCompare from '@/components/Report/MovieCompare.vue';
+import MovieCarousel from '@/components/Report/MovieCarousel.vue';
+// import MovieCompare from '@/components/Report/MovieCompare.vue';
 import { tmdbImageURL } from '@/movies';
-import { getUserSimilarities } from '@/similarities'
-import { BCarouselList } from 'buefy'
-// import 'buefy/dist/buefy.css'
+import { getUserSimilarities, type ReviewDiff } from '@/similarities'
 import { ref } from 'vue';
 
 
@@ -16,102 +15,39 @@ interface CompareItem {
   sim: number
 }
 
-
-const active = ref(0)
-
 const maxDiff = ref<CompareItem[]>([])
 const minDiff = ref<CompareItem[]>([])
 const zeroDiff = ref<CompareItem[]>([])
 
-getUserSimilarities('LZbZsaWfRfO2q69nOSXFL6pW9PH2', 'wajaclA5vMNdTiPR3Zq0FL8lWv82', 10)
+// lucas1 LZbZsaWfRfO2q69nOSXFL6pW9PH2
+// lucas2 8MKabnDEswMX2nqapeiQsqRSCRm1
+// else wajaclA5vMNdTiPR3Zq0FL8lWv82
+
+getUserSimilarities('LZbZsaWfRfO2q69nOSXFL6pW9PH2', '8MKabnDEswMX2nqapeiQsqRSCRm1', 10)
 .then(simReport => {
-  console.log(simReport)
-  for(const diff of simReport.diff.max) {
-    maxDiff.value.push({
+
+  const mapFunc = (diff: ReviewDiff) => {
+    return {
       topImage: tmdbImageURL(diff.current.poster_path) ?? '',
       bottomImage: tmdbImageURL(diff.compare.poster_path) ?? '',
       topRating: diff.current.rating,
       bottomRating: diff.compare.rating,
       diff: diff.diff,
       sim: diff.sim
-    })
+    }
   }
-  for(const diff of simReport.diff.min) {
-    minDiff.value.push({
-      topImage: tmdbImageURL(diff.current.poster_path) ?? '',
-      bottomImage: tmdbImageURL(diff.compare.poster_path) ?? '',
-      topRating: diff.current.rating,
-      bottomRating: diff.compare.rating,
-      diff: diff.diff,
-      sim: diff.sim,
-    })
-  }
-  // for(const diff of simReport.diff.zero) {
-  //   zeroDiff.value.push({
-  //     topImage: tmdbImageURL(diff.current.poster_path) ?? '',
-  //     bottomImage: tmdbImageURL(diff.compare.poster_path) ?? '',
-  //     topRating: diff.current.rating,
-  //     bottomRating: diff.compare.rating,
-  //     diff: diff.diff
-  //   })
-  // }
+  maxDiff.value = simReport.max.map(mapFunc);
+  minDiff.value = simReport.min.map(mapFunc);
+  zeroDiff.value = simReport.same.map(mapFunc);
+
 })
-
-
 </script>
 
 <template>
-
-
-  <div class="carousel-container">
-    <h1 class="label">Max Diff</h1>
-    <BCarouselList
-      v-model="active"
-      :data="maxDiff"
-      :items-to-show="5"
-      :items-to-list="3"
-      :arrow="true"
-      :arrow-hover="true"
-    >
-      <template #item="compare">
-        <MovieCompare
-          :topImage="compare.topImage"
-          :bottomImage="compare.bottomImage"
-          :topRating="compare.topRating"
-          :bottomRating="compare.bottomRating"
-          :diff="compare.diff"
-          :sim="compare.sim"
-        />
-      </template>
-    </BCarouselList>
-  </div>
-
-  <h1 class="label">TEXT TEXT TEXT</h1>
-
-  <div class="carousel-container">
-    <h1 class="label">Min Diff</h1>
-    <BCarouselList
-      v-model="active"
-      :data="minDiff"
-      :items-to-show="5"
-      :items-to-list="3"
-      :arrow="true"
-      :arrow-hover="true"
-    >
-      <template #item="compare">
-        <MovieCompare
-          :topImage="compare.topImage"
-          :bottomImage="compare.bottomImage"
-          :topRating="compare.topRating"
-          :bottomRating="compare.bottomRating"
-          :diff="compare.diff"
-          :sim="compare.sim"
-        />
-      </template>
-    </BCarouselList>
-  </div>
-
-
+  <label class="label">Min difference</label>
+  <MovieCarousel :list="minDiff"></MovieCarousel>
+  <label class="label">Max difference</label>
+  <MovieCarousel :list="maxDiff"></MovieCarousel>
 </template>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <script setup>
-import { ChevronsDown, ChevronsUp, Equal, Percent, Star } from 'lucide-vue-next';
+import { ChevronsDown, ChevronsUp, Equal, Star } from 'lucide-vue-next';
 
 defineProps({
   topImage: {
@@ -27,6 +27,7 @@ defineProps({
     required: true
   }
 })
+
 </script>
 
 <template>
@@ -43,8 +44,8 @@ defineProps({
       <span v-if="diff > 0" class="icon is-small is-inline-flex">
         <ChevronsUp class="has-text-success"/>
       </span>
-      <span v-else-if="diff === 0" class="icon is-small is-inline-flex">
-        <Equal color="white"/>
+      <span v-else-if="diff == 0.0" class="icon is-small is-inline-flex">
+        <Equal class="has-text-white"/>
       </span>
       <span v-else class="icon is-small is-inline-flex">
         <ChevronsDown class="has-text-danger"/>
