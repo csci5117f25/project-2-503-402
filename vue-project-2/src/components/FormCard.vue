@@ -2,25 +2,23 @@
 import MovieSearch from '@/components/MovieSearch.vue'
 import { useCurrentUser } from 'vuefire'
 import { computed, ref, onMounted, defineComponent, watch } from 'vue'
-import { addUserReview, getMovie, getUserMovieReview, type MovieData, type UserReview, } from '@/movies'
+import { addUserReview, getMovie, getUserMovieReview, type MovieData, type UserReview } from '@/movies'
 import { useRoute } from 'vue-router'
 import vue3StarRatings from "vue3-star-ratings"
 import { Star } from 'lucide-vue-next'
 
 defineComponent({
-  components: {
-    vue3StarRatings
-  }
+  components: { vue3StarRatings }
 })
 
 const emit = defineEmits([
   'update:movie',
-  'submit'
+  'submit',
+  'preview', 
 ])
 
 const route = useRoute()
 
-// Hold movie ID from movie search component
 const movieId = ref<number | undefined>(undefined)
 const currentUser = useCurrentUser()
 const userId = computed(() => (currentUser.value?.uid ? currentUser.value.uid : null))
@@ -28,34 +26,29 @@ const userId = computed(() => (currentUser.value?.uid ? currentUser.value.uid : 
 const rating = ref<number | undefined>(undefined)
 const comment = ref<string>('')
 
-// Auto-populate from route query params
+function handlePreview() {
+  if (!movieId.value) return
+  emit('preview', {
+    movieId: movieId.value,
+    rating: rating.value ?? 0,
+    comment: comment.value ?? '',
+  })
+}
+
+
+
 onMounted(async () => {
-  if (route.query.movieId) {
-    const id = parseInt(route.query.movieId as string)
-    movieId.value = id
-  }
-  if (route.query.rating) {
-    rating.value = parseInt(route.query.rating as string)
-  }
-  if (route.query.comment) {
-    comment.value = route.query.comment as string
-  }
+  if (route.query.movieId) movieId.value = parseInt(route.query.movieId as string)
+  if (route.query.rating) rating.value = parseInt(route.query.rating as string)
+  if (route.query.comment) comment.value = route.query.comment as string
 })
 
-// Round ratings by half star
 watch(rating, () => {
-  if(!rating.value || rating.value % 0.5 === 0) {
-    return
-  }
-  if(rating.value % 1 < 0.5) {
-    rating.value = Math.floor(rating.value) + 0.5
-  }
-  else {
-    rating.value = Math.ceil(rating.value)
-  }
+  if (!rating.value || rating.value % 0.5 === 0) return
+  if (rating.value % 1 < 0.5) rating.value = Math.floor(rating.value) + 0.5
+  else rating.value = Math.ceil(rating.value)
 })
 
-// TODO enforce movie exists
 watch(movieId, async () => {
   if (!movieId.value) {
     rating.value = 0
@@ -64,25 +57,23 @@ watch(movieId, async () => {
     return
   }
   try {
-    if(userId.value) {
+    if (userId.value) {
       const userReview = await getUserMovieReview(userId.value, movieId.value)
-      if(userReview) {
-        rating.value = userReview.rating;
-        comment.value = userReview.comment;
+      if (userReview) {
+        rating.value = userReview.rating
+        comment.value = userReview.comment
         emit('update:movie', movieId.value, userReview as MovieData)
         return
       }
     }
     const data = await getMovie(movieId.value)
-    if(data)
-      emit('update:movie', movieId.value, data)
+    if (data) emit('update:movie', movieId.value, data)
   } catch (err) {
     console.log(err)
     alert('Invalid movie selected!')
   }
 })
 
-// Submit handler
 async function handleSubmit(event: SubmitEvent) {
   if (!userId.value) {
     emit('submit', false)
@@ -100,10 +91,10 @@ async function handleSubmit(event: SubmitEvent) {
   const review: UserReview = {
     rating: rating.value,
     comment: comment.value,
-    draft: (<HTMLButtonElement>event.submitter).value === 'draft',
+    draft: (event.submitter as HTMLButtonElement).value === 'draft',
   }
+
   await addUserReview(userId.value, movieId.value, review)
-  console.log(`Submitted user review, user ${userId.value}`)
 
   movieId.value = undefined
   rating.value = undefined
@@ -111,6 +102,7 @@ async function handleSubmit(event: SubmitEvent) {
   emit('submit', true)
 }
 </script>
+
 
 <template>
   <div class="form-page-container">
@@ -122,7 +114,6 @@ async function handleSubmit(event: SubmitEvent) {
           <label class="label bulma-label">Your Rating (0-10)</label>
 
           <div class="columns">
-            <!-- Column for the numeric input -->
             <div class="column">
               <div class="control has-icons-left">
                 <input
@@ -141,7 +132,6 @@ async function handleSubmit(event: SubmitEvent) {
               </div>
             </div>
 
-            <!-- Column for the star rating component -->
             <div class="column is-flex is-justify-content-center">
               <vue3StarRatings
                 v-model="rating"
@@ -167,6 +157,10 @@ async function handleSubmit(event: SubmitEvent) {
         </div>
 
         <div class="field is-grouped isgrouped-center" style="margin-top: 20px">
+          <p class="control">
+              <button class="button" type="button" @click="handlePreview">Preview</button>
+
+            </p>
           <p class="control">
             <button class="button" type="submit" value="post">Submit</button>
           </p>
