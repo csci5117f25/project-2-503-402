@@ -91,14 +91,13 @@ function onError(err) {
 </script>
 
 <template>
-  <div v-if="result">
+  <!-- <div v-if="result">
     <p class="decode-result">
       Last result: <b>{{ result }}</b>
     </p>
     <h1>This is where report goes</h1>
-  </div>
+  </div> -->
 
-  <template v-else>
     <div class="qr-body">
       <div class="qr-section">
         <div class="tabs-header">
@@ -144,7 +143,6 @@ function onError(err) {
         </div>
       </div>
     </div>
-  </template>
 
   <div class="is-flex is-justify-content-center is-align-items-center is-flex-direction-column">
     <h1 class="title">Similarity Reports</h1>
