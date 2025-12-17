@@ -42,6 +42,15 @@ METHODOLOGY
 
   In non-overlap set    (ALLOW FAVORITES?)
     RETURN extremas from weighted similarity
+
+  I PRETTY MUCH DIDN'T FOLLOW THE ABOVE
+  WHAT I DID DO
+    compare 2 user ratings
+      scale and compare ratings using a similarity matrix by genre
+      sort difference in ratings into lists of:
+        maximum diff
+        minimum diff
+        diff closest to zero
 */
 
 const NUM_GENRES = 19

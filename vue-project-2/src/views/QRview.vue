@@ -1,30 +1,29 @@
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-
-
+// import { useRouter } from 'vue-router'
+import { QrcodeCapture, QrcodeStream } from 'vue-qrcode-reader'
+// import { onBeforeRouteUpdate } from 'vue-router'
 const defaultConstraintOptions = [
   { label: 'rear camera', constraints: { facingMode: 'environment' } },
   { label: 'front camera', constraints: { facingMode: 'user' } },
 ]
 const constraintOptions = ref(defaultConstraintOptions)
 
-const router = useRouter()
+// const router = useRouter()
 const result = ref('')
-const error = ref(null)
-const paused = ref(false)
+// const error = ref(null)
+// const paused = ref(false)
 const camera_ready = ref(false)
 
-function handleSubmit() {
-
-  router.push({ name: 'report', params: { id: result?.value} })
+const mode = ref('upload')
+function changeMode(newMode) {
+  mode.value = newMode
 }
 
 function onDetect(detectedCodes) {
   console.log(detectedCodes[0].rawValue)
   // result.value = JSON.stringify(detectedCodes.map((code) => code.rawValue))
   result.value = detectedCodes[0].rawValue
-  paused.value = true
 }
 
 // the next 3 functions are from: https://gruhn.github.io/vue-qrcode-reader/demos/FullDemo.html
@@ -57,140 +56,163 @@ async function onCameraReady() {
     })),
   ]
 
-  error.value = ''
+  // error.value = ''
   camera_ready.value = true
 }
 
 function onError(err) {
-  error.value = `[${err.name}]: `
-  if (err.name === 'NotAllowedError') {
-    error.value += 'you need to grant camera access permission'
-  } else if (err.name === 'NotFoundError') {
-    error.value += 'no camera on this device'
-  } else if (err.name === 'NotSupportedError') {
-    error.value += 'secure context required (HTTPS, localhost)'
-  } else if (err.name === 'NotReadableError') {
-    error.value += 'is the camera already in use?'
-  } else if (err.name === 'OverconstrainedError') {
-    error.value += 'installed cameras are not suitable'
-  } else if (err.name === 'StreamApiNotSupportedError') {
-    error.value += 'Stream API is not supported in this browser'
-  } else if (err.name === 'InsecureContextError') {
-    error.value +=
-      'Camera access is only permitted in secure context. Use HTTPS or localhost rather than HTTP.'
-  } else {
-    error.value += err.message
-  }
-
   console.error(err)
 }
 
-// onBeforeRouteUpdate(() => {
-//   result.value = null
-//   paused.value = false
-// })
 </script>
 
 <template>
-  <div class="qr-body">
-    <div class="qr-text">
-
-      <div v-if="result">
-        <p class="decode-result">
-          Last result: <b>{{ result }}</b>
-        </p>
-        <button @click="handleSubmit">See report</button>
-      </div>
-    </div>
-
-    <div class="qr-camera">
-      <div class="camera-overlay" v-if="!camera_ready">
-        <!-- <span>Enable camera</span> -->
-      </div>
-      <qrcode-stream
-        class="qr-stream"
-        :class="{ 'qr-stream--hidden': !camera_ready }"
-        :paused="paused"
-        :track="paintBoundingBox"
-        @error="onError"
-        @detect="onDetect"
-        @camera-on="onCameraReady"
-      />
-    </div>
+  <div v-if="result">
+    <p class="decode-result">
+      Last result: <b>{{ result }}</b>
+    </p>
+    <h1>This is where report goes</h1>
   </div>
+
+  <template v-else>
+    <div class="qr-body">
+      <div class="qr-section">
+        <div class="tabs-header">
+          <button
+            type="button"
+            class="tab-btn"
+            :class="{ active: mode === 'upload' }"
+            @click="changeMode('upload')"
+          >
+            Upload QR Code
+          </button>
+
+          <button
+            type="button"
+            class="tab-btn"
+            :class="{ active: mode === 'scan' }"
+            @click="changeMode('scan')"
+          >
+            Scan QR Code
+          </button>
+        </div>
+        <div class="tab-content">
+          <div v-if="mode === 'upload'" class="qr-upload">
+            <div class="upload-container">
+              <p class="qr-instruction">Upload an image file containing a QR code.</p>
+              <QrcodeCapture @detect="onDetect" class="file-input" />
+            </div>
+          </div>
+
+          <div v-if="mode === 'scan'" class="qr-scan">
+            <div class="qr-camera">
+
+              <QrcodeStream
+                @detect="onDetect"
+                @camera-on="onCameraReady"
+                @error="onError"
+                :paused="paused"
+                :track="paintBoundingBox"
+              />
+
+               <p class="qr-instruction">Use your camera to scan a QR code.</p>
+
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
 </template>
 
+
 <style scoped>
-.qr-camera {
-  position: relative;
+.qr-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 100%;
-  max-width: 480px;
-  aspect-ratio: 6 / 9;
-  background: #000;
-  border-radius: 0.75rem;
+  min-height: calc(100vh - 100px);
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.qr-section {
+  width: 100%;
+  max-width: 420px;
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
 }
 
-.qr-stream {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.qr-stream--hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.camera-overlay {
-  position: absolute;
-  inset: 0;
-  background: #000;
-  color: #fff;
+.tabs-header {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 500;
-  font-size: 0.95rem;
+  background-color: #222;
+  border-bottom: 1px solid #333;
+}
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #888;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  color: #ccc;
+  background-color: #2a2a2a;
+}
+
+.tab-btn.active {
+  color: white;
+  border-bottom-color: #ef4444;
+  background-color: #262626;
+}
+
+.upload-container {
+  position: relative;
+  border: 2px dashed #444;
+  border-radius: 8px;
+  padding: 2rem;
   text-align: center;
-  padding: 0.5rem;
-  z-index: 2;
+  overflow: hidden;
+  transition: border-color 0.2s;
 }
 
-@media (min-width: 768px) {
-  .qr-body {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: center;
-  }
-
-  .qr-text {
-    flex: 1 1 0;
-  }
-
-  .qr-camera {
-    flex: 0 0 320px; /* camera gets a fixed-ish width */
-    max-width: 360px;
-  }
+.upload-container:hover {
+  border-color: #666;
 }
 
-/* Really small screens: keep some breathing room */
-@media (max-width: 400px) {
-  .qr-body {
-    padding: 0.5rem;
-  }
-
-  .qr-camera {
-    border-radius: 0.5rem;
-  }
+.qr-scan {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
 
-.qr-text {
-  /* background-color: white; */
-  color: black;
+.qr-camera {
+  width: 100%;
+  aspect-ratio: 1;
+  background: black;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #333;
+}
+
+.qr-instruction {
+  color: #aaa;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
 }
 </style>

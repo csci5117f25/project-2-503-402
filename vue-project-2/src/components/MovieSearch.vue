@@ -80,12 +80,13 @@ function formatTitle(movie: MovieResultItem) {
         <input
           v-model.trim="searchText"
           @input="searchBar"
-          class="input"
+          class="input bulma-input"
           name="title"
           required
           type="text"
+          placeholder="Movie Title"
         />
-        <span class="icon is-small is-left"><Clapperboard /></span>
+        <span class="icon is-small is-left"><Clapperboard color="black"/></span>
       </div>
     </div>
     <div v-if="searchResults.length > 0" class="dropdown-menu" id="dropdown-menu" role="menu">
@@ -110,5 +111,24 @@ function formatTitle(movie: MovieResultItem) {
 
 .dropdown-trigger {
   width: 100%;
+}
+
+.dropdown-content {
+  max-height: 30vh;
+  overflow-y: auto;
+}
+
+.input {
+  background-color: white;
+  color: black;
+}
+
+.label {
+  color: white;
+}
+
+::placeholder {
+  color: black;
+  opacity: 0.4;
 }
 </style>

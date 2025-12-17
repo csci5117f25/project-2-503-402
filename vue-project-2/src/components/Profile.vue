@@ -5,21 +5,20 @@ import { useCurrentUser, useFirestore } from 'vuefire'
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
 import { Film, BarChart3, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
-  
-  import VueQrcode from 'vue-qrcode'
+
+import VueQrcode from 'vue-qrcode'
 import { GetUserQrCode } from '@/qrcodes'
 
 const router = useRouter()
 
-
 const qrCodeValue = ref('')
 const qrDataUrl = ref('')
 
-function onDataUrlChange(data) {
+function onDataUrlChange(data: string) {
   qrDataUrl.value = data
 }
 
-async function genQrCode(userId) {
+async function genQrCode(userId: string) {
   const qrData = await GetUserQrCode(userId)
   qrCodeValue.value = qrData.value
 }
@@ -68,8 +67,8 @@ function navigateToDraft(movieId: string, rating?: number, comment?: string) {
     },
   })
 }
-  
-  onMounted(() => {
+
+onMounted(() => {
   if (user.value) {
     genQrCode(user.value.uid)
   }
@@ -84,7 +83,6 @@ watch(
       await fetchDraftReviews(newUser.uid)
     }
   },
-])
   { immediate: true },
 )
 
@@ -307,17 +305,22 @@ function closeMoviesList() {
               {{ user.displayName?.[0]?.toUpperCase() || 'U' }}
             </div>
           </div>
+
+          <div class="profile-info">
+            <h1 class="user-name">{{ user.displayName }}</h1>
+            <p class="user-email">{{ user.email }}</p>
+          </div>
         </div>
 
-        <div class="profile-info">
-          <h1 class="user-name">{{ user.displayName }}</h1>
-          <p class="user-email">{{ user.email }}</p>
-          <div class="qr-code-section">
-            <div v-if="qrCodeValue">
-              <VueQrcode :value="qrCodeValue" @change="onDataUrlChange" />
-              <a v-if="qrDataUrl" :href="qrDataUrl" download="movieprofile.png">Download QR</a>
-            </div>
-          </div>
+        <div class="qr-code-section">
+          <VueQrcode
+            v-if="qrCodeValue"
+            :value="qrCodeValue"
+            :type="'image/png'"
+            :color="{ dark: '#000000', light: '#ffffff' }"
+            @change="onDataUrlChange"
+          />
+          <a v-if="qrDataUrl" :href="qrDataUrl" download="movieprofile.png">Download QR</a>
         </div>
       </div>
 
@@ -327,7 +330,10 @@ function closeMoviesList() {
         <h2>Statistics Summary</h2>
       </div>
 
-      <div v-if="isLoadingStats" class="loading-stats">Loading your statistics...</div>
+      <div v-if="isLoadingStats" class="loading-stats">
+        <div class="loading-spinner" aria-label="Loading" />
+        <p>Loading your statistics</p>
+      </div>
 
       <div v-else class="statistics-section">
         <div class="stat-card clickable" @click="fetchWatchedMovies">
@@ -407,7 +413,19 @@ function closeMoviesList() {
           <div class="movie-info">
             <h3>{{ movie.title }}</h3>
             <p v-if="movie.year" class="movie-year">{{ movie.year }}</p>
-            <div v-if="movie.rating !== undefined" class="movie-rating">⭐ {{ movie.rating }}</div>
+            <div v-if="movie.rating !== undefined" class="movie-rating">
+              <svg
+                class="movie-rating-star"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                />
+              </svg>
+              {{ movie.rating }}
+            </div>
             <p v-if="movie.comment" class="movie-comment">{{ movie.comment }}</p>
           </div>
         </div>
@@ -416,30 +434,4 @@ function closeMoviesList() {
   </div>
 </template>
 
-<style scoped src="@/styles/profile.css">
-  .qr-code-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-.qr-code-section canvas,
-.qr-code-section img {
-  width: 120px;
-  height: 120px;
-  padding: 0.5rem;
-  border-radius: 0.75rem;
-  background: #f9fafb;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-}
-.qr-code-section a {
-  font-size: 0.85rem;
-  color: #6366f1;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.qr-code-section a:hover {
-  text-decoration: underline;
-}
-</style>
+<style scoped src="@/styles/profile.css"></style>
