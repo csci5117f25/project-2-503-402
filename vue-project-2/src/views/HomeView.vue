@@ -41,7 +41,7 @@
               </div>
 
               <div class="metric-sub" v-if="yearStats.favoriteRating !== null">
-                Your rating: {{ Math.round(yearStats.favoriteRating) }}/10
+                Your rating: {{ Math.round(Number(yearStats.favoriteRating)) }}/10
               </div>
               <div class="metric-sub" v-else>—</div>
             </div>
