@@ -39,7 +39,7 @@
                   <div class="global-count">{{ formatCount(review.rating_count) }} ratings</div>
                 </div>
 
-                <div class="card-actions" v-if="!isMobile || isFlipped">
+                <div class="card-actions" v-if="showActions && (!isMobile || isFlipped)">
                   <button
                     type="button"
                     class="expand-btn"
@@ -218,7 +218,7 @@
               </div>
             </div>
 
-            <footer class="bottom-row desktop-only" @click.stop>
+            <footer v-if="showFacts" class="bottom-row desktop-only" @click.stop>
               <div class="facts">
                 <span class="fact-pill">{{ formatDate(review.release_date) }}</span>
                 <span v-if="review.runtime" class="fact-pill">{{ review.runtime }} min</span>
@@ -230,11 +230,7 @@
                   </span>
                 </span>
 
-                <span
-                  v-if="review.genresText"
-                  class="fact-pill genres-pill"
-                  :title="review.genresText"
-                >
+                <span v-if="review.genresText" class="fact-pill genres-pill" :title="review.genresText">
                   {{ review.genresText }}
                 </span>
               </div>
@@ -358,12 +354,23 @@ type ReviewCard = {
   posterUrl?: string | null
 }
 
-const props = defineProps<{
-  review: ReviewCard
-  busy?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    review: ReviewCard
+    busy?: boolean
+    showActions?: boolean
+    showFacts?: boolean   
+  }>(),
+  {
+    showActions: true,
+    showFacts: true,     
+  },
+)
 
-const { review, busy } = toRefs(props)
+const { review, busy, showActions, showFacts } = toRefs(props)
+
+
+
 
 const emit = defineEmits<{
   (e: 'delete', r: ReviewCard): void

@@ -100,9 +100,19 @@ function handleSubmit(success: boolean) {
     <div class="form-container">
       <h1 class="title">Add a Review</h1>
 
-      <ReviewCard v-if="previewCardData" :review="previewCardData" key="preview-real" />
+      <ReviewCard
+        v-if="previewCardData"
+        :review="previewCardData"
+        :show-actions="false"
+        :show-facts="false"
+      />
 
-      <ReviewCard v-else :review="placeholderCard" key="preview-empty" />
+      <ReviewCard
+        v-else
+        :review="placeholderCard"
+        :show-actions="false"
+        :show-facts="false"
+      />
 
       <FormCard
         ref="formRef"
