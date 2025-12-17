@@ -23,6 +23,7 @@
     "vue-qrcode": "^2.2.2",
     "vue-qrcode-reader": "^5.7.3",
     "vue-router": "^4.6.3",
+    "vue3-star-ratings": "^3.0.5",
     "vuefire": "^3.2.2"
   },
   "devDependencies": {

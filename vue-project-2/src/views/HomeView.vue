@@ -148,6 +148,7 @@ import {
   type UserReview,
 } from '@/movies'
 
+
 type ReviewCardData = {
   movieId: number
   title: string
@@ -157,14 +158,13 @@ type ReviewCardData = {
   poster_path: string | null
   rating_avg: number
   rating_count: number
-  budget: number | null
+  budget?: number
   genresText: string
-
   user_rating: number
   user_thoughts: string
   draft?: boolean
   rewatch?: boolean
-  posterUrl?: string | null
+  posterUrl?: string
 }
 
 const currentUser = useCurrentUser()
@@ -415,7 +415,7 @@ async function loadHomeReviews(uid: string) {
       const movieId = movieIds[idx]
       if (movieId === undefined) continue
 
-      const posterUrl = item.poster_path ? tmdbImageURL(item.poster_path) : null
+      const posterUrl = tmdbImageURL(item.poster_path)
       const genresText = item.genres ? Object.values(item.genres).join(', ') : ''
 
       const itemWithRewatch = item as typeof item & { rewatch?: boolean }
@@ -429,14 +429,14 @@ async function loadHomeReviews(uid: string) {
         poster_path: item.poster_path ?? null,
         rating_avg: item.rating_avg,
         rating_count: item.rating_count,
-        budget: item.budget && item.budget > 0 ? item.budget : null,
+        budget: item.budget && item.budget > 0 ? item.budget : undefined,
         genresText,
 
         user_rating: item.rating,
         user_thoughts: item.comment,
         draft: item.draft ?? false,
         rewatch: itemWithRewatch.rewatch ?? false,
-        posterUrl,
+        posterUrl: posterUrl ?? undefined,
       }
 
       if (!card.draft) cards.push(card)
