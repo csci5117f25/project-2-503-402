@@ -1,133 +1,92 @@
 <script setup lang="ts">
-import MovieSearch from '@/components/MovieSearch.vue'
-import { Star } from 'lucide-vue-next'
-import { useCurrentUser } from 'vuefire'
-import { computed, ref, onMounted } from 'vue'
-import { addUserReview, getMovie, type UserReview } from '@/movies'
-import { useRoute } from 'vue-router'
+import FormCard from '@/components/FormCard.vue'
+import ReviewCard from '@/components/ReviewCard.vue';
+import { tmdbImageURL, type UserMovieReview } from '@/movies';
+import { ref } from 'vue';
 
-const route = useRoute()
+const review = ref<UserMovieReview | undefined>(undefined)
+const inputId = ref<number | undefined>(undefined)
+const today = new Date()
 
-// Hold movie ID from movie search component
-const movieId = ref<number | undefined>(undefined)
-const currentUser = useCurrentUser()
-const userId = computed(() => (currentUser.value?.uid ? currentUser.value.uid : null))
 
-const rating = ref<number | undefined>(undefined)
-const comment = ref<string>('')
+const placeholderReview = ref<UserMovieReview>({
+  title: "Review Preview",
+  release_date: today.toLocaleDateString(),
+  tagline: "This review does not exist... YET!",
+  runtime: 0,
+  budget: 0,
+  genres: {},
+  rating_avg: 0,
+  rating_count: 0,
+  cached_at: today,
+  rating: 0,
+  comment: ''
+} as UserMovieReview)
 
-// Auto-populate from route query params
-onMounted(async () => {
-  if (route.query.movieId) {
-    const id = parseInt(route.query.movieId as string)
-    movieId.value = id
-    await movieUpdate(id)
+
+function handleMovie(id: number, data: UserMovieReview) {
+  if(data && id) {
+    review.value = data
+    inputId.value = id
   }
-  if (route.query.rating) {
-    rating.value = parseInt(route.query.rating as string)
-  }
-  if (route.query.comment) {
-    comment.value = route.query.comment as string
-  }
-})
-
-// TODO enforce movie exists
-async function movieUpdate(id: number) {
-  if (!id) return
-  try {
-    await getMovie(id)
-    console.log(`Movie id: ${id}`)
-  } catch (err) {
-    console.log(err)
-    alert('Invalid movie selected!')
+  else {
+    review.value = undefined
   }
 }
 
-// Submit handler
-async function handleSubmit(event: SubmitEvent) {
-  if (!userId.value) {
-    throw new Error('User needs to be logged in for form submission')
-  }
-  if (!movieId.value) {
-    throw new Error('Invalid movie selected')
-  }
-
-  const formData = new FormData(<HTMLFormElement>event.target)
-  const review: UserReview = {
-    rating: parseInt(formData.get('rating') as string),
-    comment: formData.get('comment') as string,
-    draft: (<HTMLButtonElement>event.submitter).value === 'draft',
-  }
-
-  await addUserReview(userId.value, movieId.value, review)
-  console.log(`Submitted user review, user ${userId.value}`)
-  movieId.value = undefined
-  rating.value = undefined
-  comment.value = ''
-}
 </script>
 
 <template>
-  <form class="form-container" @submit.prevent="handleSubmit">
-    <div class="box">
-      <MovieSearch v-model:id="movieId" @update:id="movieUpdate($event)"></MovieSearch>
+  <div class="form-page form-center">
+    <div class="form-container">
+      <h1 class="title">Add a Review</h1>
+      <ReviewCard v-if="review && inputId"
+        key="preview-real"
+        :review="{
+          ...review,
+          movieId: inputId,
+          posterUrl: tmdbImageURL(review.poster_path) ?? '',
+          genresText: Object.values(review.genres).join(', ') ?? ''
+        }"
+      ></ReviewCard>
 
-      <label class="label">Your Rating (1-10)</label>
-      <div class="control has-icons-left">
-        <input
-          class="input"
-          name="rating"
-          required
-          type="number"
-          step="1"
-          min="1"
-          max="10"
-          v-model="rating"
-        />
-        <span class="icon is-small is-left">
-          <Star />
-        </span>
-      </div>
+      <ReviewCard v-else
+        key="preview"
+        :review="{
+          ...placeholderReview,
+          movieId: 0,
+          posterUrl: '',
+          genresText: ''
+        }"
+      ></ReviewCard>
 
-      <label class="label">Personal Thoughts</label>
-      <div class="control">
-        <textarea
-          class="textarea"
-          name="comment"
-          rows="4"
-          maxlength="2000"
-          placeholder="What made you remember this movie?"
-          v-model="comment"
-        ></textarea>
-      </div>
+      <FormCard
+        @update:movie="handleMovie"
+      ></FormCard>
     </div>
-
-    <button class="button" type="submit" value="post">Submit</button>
-    <button class="button" type="submit" value="draft">Save Draft</button>
-  </form>
+  </div>
 </template>
 
 <style scoped>
-form.form-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 10vh auto;
-  width: 80%;
-}
 
-div.box {
-  width: 100%;
-  background-color: white;
-  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
-}
+  .form-center {
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+  }
 
-label.label {
-  margin-top: 2vh;
-  color: black;
-}
+  .form-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin: 5%;
+    margin-top: 5vh;
+    gap: 20px;
+  }
 
-input.input {
-  background-color: rgba(148, 163, 184, 0.12);
-}
+  h1.title {
+    color: black;
+    margin-bottom: 0;
+  }
+
 </style>

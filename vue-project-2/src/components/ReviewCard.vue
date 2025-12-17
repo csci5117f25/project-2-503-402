@@ -222,12 +222,12 @@ type ReviewCard = {
   runtime: number | null
   rating_avg: number
   rating_count: number
-  budget: number | null
+  budget?: number
   genresText: string
-  user_rating: number | null
-  user_thoughts: string | null
-  rewatch?: boolean | null
-  posterUrl?: string | null
+  user_rating?: number
+  user_thoughts?: string
+  rewatch?: boolean
+  posterUrl?: string
 }
 
 const props = defineProps<{

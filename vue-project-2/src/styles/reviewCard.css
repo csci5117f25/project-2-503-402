@@ -412,6 +412,21 @@
   display: block;
 }
 
+.bulma-input {
+  background-color: white;
+  color: black;
+}
+
+.bulma-label {
+  margin-top: 2vh;
+  color: black;
+}
+
+::placeholder {
+  color: black;
+  opacity: 0.4;
+}
+
 @media (max-width: 900px) {
   .review-card {
     max-width: 100%;

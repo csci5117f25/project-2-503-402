@@ -19,7 +19,8 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
-  background: #1a1a1a;
+  /* background: #1a1a1a; */
+  background: radial-gradient(circle at top left, #f6f7ff 0, #eef1f7 40%, #e5e9f0 100%);
 }
 
 header {
