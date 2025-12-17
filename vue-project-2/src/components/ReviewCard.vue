@@ -230,7 +230,11 @@
                   </span>
                 </span>
 
-                <span v-if="review.genresText" class="fact-pill genres-pill" :title="review.genresText">
+                <span
+                  v-if="review.genresText"
+                  class="fact-pill genres-pill"
+                  :title="review.genresText"
+                >
                   {{ review.genresText }}
                 </span>
               </div>
@@ -359,18 +363,15 @@ const props = withDefaults(
     review: ReviewCard
     busy?: boolean
     showActions?: boolean
-    showFacts?: boolean   
+    showFacts?: boolean
   }>(),
   {
     showActions: true,
-    showFacts: true,     
+    showFacts: true,
   },
 )
 
 const { review, busy, showActions, showFacts } = toRefs(props)
-
-
-
 
 const emit = defineEmits<{
   (e: 'delete', r: ReviewCard): void

@@ -107,12 +107,7 @@ function handleSubmit(success: boolean) {
         :show-facts="false"
       />
 
-      <ReviewCard
-        v-else
-        :review="placeholderCard"
-        :show-actions="false"
-        :show-facts="false"
-      />
+      <ReviewCard v-else :review="placeholderCard" :show-actions="false" :show-facts="false" />
 
       <FormCard
         ref="formRef"
