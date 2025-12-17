@@ -18,19 +18,23 @@ const result = ref('')
 
 // Add logic to auto-update similarity reports per user
 const currentUser = useCurrentUser()
-const userId = computed(() => (currentUser.value?.uid ?? null))
+const userId = computed(() => currentUser.value?.uid ?? null)
 watch(result, () => {
-  if(!userId.value || !result.value) {
+  if (!userId.value || !result.value) {
     return
   }
   // Set references to the reports in the respective users' firestores
   // The similarity report uses useCollection, so automatically updated
   // TODO need to set NAME of other user, but we don't store this in the database ...  ALLOW EDITS???
-  setDoc(doc(db, `users/${userId.value}/reports/${result.value}`), { name: 'OTHER USER', uid: result.value})
-  setDoc(doc(db, `users/${result.value}/reports/${userId.value}`), { name: 'OTHER USER', uid: userId.value})
+  setDoc(doc(db, `users/${userId.value}/reports/${result.value}`), {
+    name: 'OTHER USER',
+    uid: result.value,
+  })
+  setDoc(doc(db, `users/${result.value}/reports/${userId.value}`), {
+    name: 'OTHER USER',
+    uid: userId.value,
+  })
 })
-
-
 
 // const error = ref(null)
 // const paused = ref(false)

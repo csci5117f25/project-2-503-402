@@ -1,25 +1,24 @@
 <script setup lang="ts">
-import MovieCompare from '@/components/Report/MovieCompare.vue';
+import MovieCompare from '@/components/Report/MovieCompare.vue'
 import { BCarouselList } from 'buefy'
-import MovieCompareKey from './MovieCompareKey.vue';
-import { ChevronLeft, ChevronRight, Pause } from 'lucide-vue-next';
-import { ref } from 'vue';
-
+import MovieCompareKey from './MovieCompareKey.vue'
+import { ChevronLeft, ChevronRight, Pause } from 'lucide-vue-next'
+import { ref } from 'vue'
 
 interface CompareItem {
-  topImage: string,
-  bottomImage: string,
-  topRating: number,
-  bottomRating: number,
-  diff: number,
+  topImage: string
+  bottomImage: string
+  topRating: number
+  bottomRating: number
+  diff: number
   sim: number
 }
 
 defineProps({
   list: {
     type: Array<CompareItem>,
-    required: true
-  }
+    required: true,
+  },
 })
 
 // SET THIS for max elements visible on static
@@ -27,16 +26,14 @@ defineProps({
 const MAX_PER_PAGE = ref(5)
 const active = ref(0)
 
-if(window.innerWidth < 968) {
+if (window.innerWidth < 968) {
   MAX_PER_PAGE.value = 2
 }
 
 // TODO if time move movieCompare to here, no need for that component
-
 </script>
 
 <template>
-
   <div class="carousel-container">
     <MovieCompareKey
       topImage=""
@@ -70,28 +67,22 @@ if(window.innerWidth < 968) {
       </template>
     </BCarouselList>
 
-    <ChevronRight v-if="active < list.length - MAX_PER_PAGE" @click="active++" :size="60"/>
+    <ChevronRight v-if="active < list.length - MAX_PER_PAGE" @click="active++" :size="60" />
     <Pause v-else :size="45"></Pause>
-
   </div>
-
 </template>
 
 <style scoped>
+.carousel-container {
+  display: flex;
+  flex-direction: row;
+  width: 70vh;
+  gap: 10px;
+}
 
+@media (max-width: 968px) {
   .carousel-container {
-    display: flex;
-    flex-direction: row;
-    width: 70vh;
-    gap: 10px;
+    width: 40vh;
   }
-
-  @media (max-width: 968px) {
-    .carousel-container {
-      width: 40vh;
-    }
-  }
-
-
-
+}
 </style>

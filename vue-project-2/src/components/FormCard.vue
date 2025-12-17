@@ -217,7 +217,7 @@ function handleClearClick() {
 .bulma-input,
 .input.bulma-input,
 .textarea.bulma-input {
-  background: rgba(15, 23, 42, 0.55) !important; 
+  background: rgba(15, 23, 42, 0.55) !important;
   color: #f3f4f6 !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   box-shadow: none !important;
