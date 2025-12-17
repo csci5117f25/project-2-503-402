@@ -4,7 +4,7 @@ import { tmdbImageURL } from '@/movies';
 import { getUserSimilarities } from '@/similarities'
 import { BCarouselList } from 'buefy'
 // import 'buefy/dist/buefy.css'
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 
 interface CompareItem {
@@ -12,8 +12,7 @@ interface CompareItem {
   bottomImage: string,
   topRating: number,
   bottomRating: number,
-  diff: number,
-  sim: number
+  diff: number
 }
 
 
@@ -32,8 +31,7 @@ getUserSimilarities('LZbZsaWfRfO2q69nOSXFL6pW9PH2', 'wajaclA5vMNdTiPR3Zq0FL8lWv8
       bottomImage: tmdbImageURL(diff.compare.poster_path) ?? '',
       topRating: diff.current.rating,
       bottomRating: diff.compare.rating,
-      diff: diff.diff,
-      sim: diff.sim
+      diff: diff.diff
     })
   }
   for(const diff of simReport.diff.min) {
@@ -42,19 +40,18 @@ getUserSimilarities('LZbZsaWfRfO2q69nOSXFL6pW9PH2', 'wajaclA5vMNdTiPR3Zq0FL8lWv8
       bottomImage: tmdbImageURL(diff.compare.poster_path) ?? '',
       topRating: diff.current.rating,
       bottomRating: diff.compare.rating,
-      diff: diff.diff,
-      sim: diff.sim,
+      diff: diff.diff
     })
   }
-  // for(const diff of simReport.diff.zero) {
-  //   zeroDiff.value.push({
-  //     topImage: tmdbImageURL(diff.current.poster_path) ?? '',
-  //     bottomImage: tmdbImageURL(diff.compare.poster_path) ?? '',
-  //     topRating: diff.current.rating,
-  //     bottomRating: diff.compare.rating,
-  //     diff: diff.diff
-  //   })
-  // }
+  for(const diff of simReport.diff.zero) {
+    zeroDiff.value.push({
+      topImage: tmdbImageURL(diff.current.poster_path) ?? '',
+      bottomImage: tmdbImageURL(diff.compare.poster_path) ?? '',
+      topRating: diff.current.rating,
+      bottomRating: diff.compare.rating,
+      diff: diff.diff
+    })
+  }
 })
 
 
@@ -64,7 +61,7 @@ getUserSimilarities('LZbZsaWfRfO2q69nOSXFL6pW9PH2', 'wajaclA5vMNdTiPR3Zq0FL8lWv8
 
 
   <div class="carousel-container">
-    <h1 class="label">Max Diff</h1>
+    <h1 class="label"></h1>
     <BCarouselList
       v-model="active"
       :data="maxDiff"
@@ -80,38 +77,10 @@ getUserSimilarities('LZbZsaWfRfO2q69nOSXFL6pW9PH2', 'wajaclA5vMNdTiPR3Zq0FL8lWv8
           :topRating="compare.topRating"
           :bottomRating="compare.bottomRating"
           :diff="compare.diff"
-          :sim="compare.sim"
         />
       </template>
     </BCarouselList>
   </div>
-
-  <h1 class="label">TEXT TEXT TEXT</h1>
-
-  <div class="carousel-container">
-    <h1 class="label">Min Diff</h1>
-    <BCarouselList
-      v-model="active"
-      :data="minDiff"
-      :items-to-show="5"
-      :items-to-list="3"
-      :arrow="true"
-      :arrow-hover="true"
-    >
-      <template #item="compare">
-        <MovieCompare
-          :topImage="compare.topImage"
-          :bottomImage="compare.bottomImage"
-          :topRating="compare.topRating"
-          :bottomRating="compare.bottomRating"
-          :diff="compare.diff"
-          :sim="compare.sim"
-        />
-      </template>
-    </BCarouselList>
-  </div>
-
-
 </template>
 
 <style scoped>

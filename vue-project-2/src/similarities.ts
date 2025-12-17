@@ -166,7 +166,17 @@ const genreSimilarityMatrix: number[][] = [
   ],
   // Western
   [0.8, 0.7, 0.1, 0.2, 0.2, -0.6, 0.5, 0.2, 0.6, 0.4, 0.3, 0.3, 0.3, 0.3, 0.6, 0.2, 0.4, 0.5, 1.0],
-]
+];
+
+// Make genre ratings more aggressive
+genreSimilarityMatrix.map(row =>
+  row.map(val => {
+    if (val === 1.0) return 1.0; // keep perfect self-similarity
+    return Math.max(-1, Math.min(1, val * 1.5));
+  })
+);
+
+
 
 // Get similarity factor between movies
 // Scaled between -1 and 1  (see above matrix)
@@ -249,7 +259,8 @@ export async function getUserSimilarities(
     diff: number,
     sim: number,
     current: UserMovieReview
-    compare: UserMovieReview
+    compare: UserMovieReview,
+    sameId?: boolean
   }
   // Sorted insert of a ReviewDiff variable into the given reviews list
   const diffInsert = (
@@ -294,13 +305,19 @@ export async function getUserSimilarities(
   let totalSum = 0
   let absSum = 0
   const simMaxLength = Math.max(maxComparisons, sameTotal)
-  const sameMax: ReviewDiff[] = []
-  const sameMin: ReviewDiff[] = []
-  const sameZero: ReviewDiff[] = []
-  const maxReviews: ReviewDiff[] = []
-  const minReviews: ReviewDiff[] = []
-  const zeroReviews: ReviewDiff[] = []
+
+  // INDICES
+  // 0 - diff min, 1 - diff max, 2 - diff zero
+  // 3 - same min, 4 - same max
+  const reviewStats: ReviewDiff[][] = [
+    [],
+    [],
+    [],
+    [],
+    [],
+  ]
   for (let i = 0; i < simMat.length; i++) {
+    const reviewDiffs: Array<ReviewDiff | undefined> = [undefined, undefined, undefined]
     for (let j = 0; j < simMat[0]!.length; j++) {
       const simFactor = simMat[i]![j]!
       if(simFactor < simMin)
@@ -312,22 +329,48 @@ export async function getUserSimilarities(
         sim: simFactor,
         current: currentReviews[i]!,
         compare: compareReviews[j]!,
+        sameId:  false
       }
 
-      // Separate results by same movie or not
-      if (currentKeys[i] === compareKeys[j]) {
-        diffInsert(sameMax, review, (a, b) => b.diff > a.diff, simMaxLength)
-        diffInsert(sameMin, review, (a, b) => b.diff < a.diff, simMaxLength)
-        diffInsert(sameZero, review, (a, b) => Math.abs(b.diff) < Math.abs(a.diff), simMaxLength)
-        sameSum += diff
-      } else {
-        diffInsert(maxReviews, review, (a, b) => b.diff > a.diff)
-        diffInsert(minReviews, review, (a, b) => b.diff < a.diff)
-        diffInsert(zeroReviews, review, (a, b) => Math.abs(b.diff) < Math.abs(a.diff))
-        diffSum += diff
+      totalSum += diff;
+      absSum += Math.abs(diff);
+      if(currentKeys[i] === compareKeys[j]) {
+        review.sameId = true;
+        sameSum += diff;
       }
-      totalSum += diff
-      absSum += Math.abs(diff)
+      else {
+        diffSum += diff;
+      }
+
+      if(!reviewDiffs[0] || diff > reviewDiffs[0].diff) {    // Max diff
+        reviewDiffs[0] = review
+      }
+      if(!reviewDiffs[1] || diff < reviewDiffs[1].diff) {    // Min diff
+        reviewDiffs[1] = review
+      }
+      if(!reviewDiffs[2] || Math.abs(diff) > reviewDiffs[2].diff) {  // Zero diff
+        reviewDiffs[2] = {
+          ...review,
+          diff:   Math.abs(diff)
+        }
+      }
+    }
+
+    // Add to respective lists
+    const diffCompare = [
+      (a: ReviewDiff, b: ReviewDiff) => b.diff > a.diff,
+      (a: ReviewDiff, b: ReviewDiff) => b.diff < a.diff,
+      (a: ReviewDiff, b: ReviewDiff) => Math.abs(b.diff) < Math.abs(a.diff)
+    ]
+    for(let i = 0; i < 3; i++) {
+      if(reviewDiffs[i]) {
+        if(reviewDiffs[i]?.sameId) {
+          diffInsert(reviewStats[i+3]!, reviewDiffs[i]!, diffCompare[i]!, simMaxLength)
+        }
+        else {
+          diffInsert(reviewStats[i]!, reviewDiffs[i]!, diffCompare[i]!, simMaxLength)
+        }
+      }
     }
   }
 
@@ -355,6 +398,8 @@ export async function getUserSimilarities(
     }
   }
 
+  console.log(reviewStats)
+
   // Bundle and return
   return {
     overlapPct: overlapPct,
@@ -363,15 +408,14 @@ export async function getUserSimilarities(
     grade: similarityGrade,
     overlap: {
       avg: sameSum / sameTotal,
-      max: sameMax,
-      min: sameMin,
-      zero: sameZero,
+      min: reviewStats[3] as ReviewDiff[],
+      max: reviewStats[4] as ReviewDiff[],
     },
     diff: {
       avg: diffSum / (currentKeys.length * compareKeys.length - sameTotal),
-      max: maxReviews,
-      min: minReviews,
-      zero: zeroReviews,
+      min: reviewStats[0] as ReviewDiff[],
+      max: reviewStats[1] as ReviewDiff[],
+      zero: reviewStats[2] as ReviewDiff[],
     },
   }
 }
