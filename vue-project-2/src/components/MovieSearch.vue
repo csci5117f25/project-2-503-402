@@ -124,7 +124,7 @@ function formatTitle(movie: MovieResultItem) {
 }
 
 .label {
-  color: black;
+  color: white;
 }
 
 ::placeholder {
