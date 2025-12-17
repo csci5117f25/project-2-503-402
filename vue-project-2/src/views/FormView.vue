@@ -6,6 +6,7 @@ import { ref } from 'vue';
 
 const review = ref<UserMovieReview | undefined>(undefined)
 const inputId = ref<number | undefined>(undefined)
+const successMsg = ref<boolean>(false)
 const today = new Date()
 
 
@@ -32,6 +33,17 @@ function handleMovie(id: number, data: UserMovieReview) {
   else {
     review.value = undefined
   }
+}
+
+function handleSubmit(success: boolean) {
+  if(!success) {
+    return
+  }
+  successMsg.value = true;
+  setTimeout(() => {
+    console.log('SUCCESS')
+    successMsg.value = false;
+  }, 3000)
 }
 
 </script>
@@ -62,7 +74,13 @@ function handleMovie(id: number, data: UserMovieReview) {
 
       <FormCard
         @update:movie="handleMovie"
+        @submit="handleSubmit"
       ></FormCard>
+
+      <transition name="fade">
+        <span v-if="successMsg">Submitted Successfully!</span>
+      </transition>
+
     </div>
   </div>
 </template>
@@ -85,8 +103,18 @@ function handleMovie(id: number, data: UserMovieReview) {
   }
 
   h1.title {
-    color: black;
+    color: white;
     margin-bottom: 0;
+  }
+
+  /* For success message */
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.5s ease;
+  }
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
   }
 
 </style>

@@ -15,6 +15,7 @@ defineComponent({
 
 const emit = defineEmits([
   'update:movie',
+  'submit'
 ])
 
 const route = useRoute()
@@ -84,24 +85,30 @@ watch(movieId, async () => {
 // Submit handler
 async function handleSubmit(event: SubmitEvent) {
   if (!userId.value) {
+    emit('submit', false)
     throw new Error('User needs to be logged in for form submission')
   }
   if (!movieId.value) {
+    emit('submit', false)
     throw new Error('Invalid movie selected')
   }
-
-  const formData = new FormData(<HTMLFormElement>event.target)
-  const review: UserReview = {
-    rating: parseInt(formData.get('rating') as string),
-    comment: formData.get('comment') as string,
-    draft: (<HTMLButtonElement>event.submitter).value === 'draft',
+  if (!rating.value) {
+    emit('submit', false)
+    throw new Error('You must rate this movie!')
   }
 
+  const review: UserReview = {
+    rating: rating.value,
+    comment: comment.value,
+    draft: (<HTMLButtonElement>event.submitter).value === 'draft',
+  }
   await addUserReview(userId.value, movieId.value, review)
   console.log(`Submitted user review, user ${userId.value}`)
+
   movieId.value = undefined
   rating.value = undefined
   comment.value = ''
+  emit('submit', true)
 }
 </script>
 
