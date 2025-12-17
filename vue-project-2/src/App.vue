@@ -123,7 +123,7 @@ async function logout() {
           </button>
         </RouterLink>
 
-        <RouterLink to="/QR" custom v-slot="{ navigate, isActive }">
+        <RouterLink to="/report" custom v-slot="{ navigate, isActive }">
           <button @click="navigate" :class="['mobile-footer-btn', { active: isActive }]">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path
