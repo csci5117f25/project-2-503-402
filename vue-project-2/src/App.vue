@@ -58,7 +58,7 @@ async function logout() {
         <nav>
           <RouterLink to="/">Home</RouterLink>
           <RouterLink to="/form">Form</RouterLink>
-          <RouterLink to="/QR">QR Code</RouterLink>
+          <RouterLink to="/report">Similarity Report</RouterLink>
           <RouterLink to="/profile">Profile</RouterLink>
         </nav>
 

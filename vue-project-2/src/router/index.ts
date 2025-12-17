@@ -3,7 +3,7 @@ import ProfileView from '@/views/ProfileView.vue'
 import HomeView from '@/views/HomeView.vue'
 import QRview from '@/views/QRview.vue'
 import FormView from '@/views/FormView.vue'
-import ReportView from '@/views/ReportView.vue'
+// import ReportView from '@/views/ReportView.vue'
 import { getCurrentUser } from 'vuefire'
 import LoginView from '@/views/LoginView.vue'
 import TestView from '@/views/TestView.vue'
@@ -24,8 +24,8 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/QR',
-      name: 'QR',
+      path: '/report',
+      name: 'report',
       component: QRview,
       meta: { requiresAuth: true },
     },
@@ -35,12 +35,12 @@ const router = createRouter({
       component: ProfileView,
       meta: { requiresAuth: true },
     },
-    {
-      path: '/report/:id',
-      name: 'report',
-      props: true,
-      component: ReportView,
-    },
+    // {
+    //   path: '/report/:id',
+    //   name: 'report',
+    //   props: true,
+    //   component: ReportView,
+    // },
     {
       path: '/login',
       name: 'login',
