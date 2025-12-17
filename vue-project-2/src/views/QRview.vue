@@ -145,7 +145,11 @@ function onError(err) {
       </div>
     </div>
   </template>
-  <SimilarityReport></SimilarityReport>
+
+  <div class="is-flex is-justify-content-center is-align-items-center is-flex-direction-column">
+    <h1 class="title">Similarity Reports</h1>
+    <SimilarityReport></SimilarityReport>
+  </div>
 </template>
 
 <style scoped>
@@ -154,7 +158,8 @@ function onError(err) {
   justify-content: center;
   align-items: center;
   width: 100%;
-  min-height: calc(100vh - 100px);
+  /* min-height: calc(100vh - 100px); */
+  min-height: 500px;
   padding: 1rem;
   box-sizing: border-box;
 }

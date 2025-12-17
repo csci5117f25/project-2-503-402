@@ -54,7 +54,7 @@ async function logout() {
   <div class="app-container">
     <header>
       <div class="header-content">
-        <h1 class="logo">Movie Tracker</h1>
+        <h1 class="logo">MovieSim</h1>
         <nav>
           <RouterLink to="/">Home</RouterLink>
           <RouterLink to="/form">Add Review</RouterLink>

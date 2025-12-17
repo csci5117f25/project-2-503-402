@@ -2,8 +2,8 @@
   <div class="center">
     <div class="not-logged-in">
       <div class="icon">📽️</div>
-      <h2>Login First</h2>
-      <p>To use MOVIETRACKER, you must be logged in!</p>
+      <h2>Login Required</h2>
+      <p>To use MovieSim, you must log in first!</p>
     </div>
   </div>
 </template>

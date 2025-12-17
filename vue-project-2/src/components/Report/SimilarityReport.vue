@@ -2,6 +2,7 @@
 import SingleSimilarityReport from '@/components/Report/SingleSimilarityReport.vue'
 import { db } from '@/firebase_conf'
 import { collection } from 'firebase/firestore'
+import { ArrowDown, ArrowUp } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { useCollection, useCurrentUser } from 'vuefire'
 
@@ -29,10 +30,17 @@ function handleActive(name: string) {
 <template>
   <div v-if="typeof userId === 'string' && reports.length > 0">
     <div v-for="report in reports" :key="report.name ? report.name : report.uid" class="drop-box">
-      <br />
-      <label class="label" @click="handleActive(report.uid)"
-        >You vs {{ report.name ?? report.uid }}</label
-      >
+      
+      <span class="icon-text" @click="handleActive(report.uid)">
+        <span class="icon" v-if="active !== report.uid">
+          <ArrowDown></ArrowDown>
+        </span>
+        <span class="icon" v-else>
+          <ArrowUp></ArrowUp>
+        </span>
+        <span> You vs {{ report.name ?? report.uid }}</span>
+      </span>
+      
       <SingleSimilarityReport
         v-if="active === report.uid"
         :current="userId"
@@ -56,5 +64,9 @@ function handleActive(name: string) {
   box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(18px);
   max-width: 920px;
+}
+
+.icon-text {
+  padding-right: 200px;
 }
 </style>
