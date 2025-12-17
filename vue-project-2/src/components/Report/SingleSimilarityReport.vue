@@ -95,7 +95,7 @@ getUserSimilarities(props.current, props.compare, props.maxListings).then((simRe
               </div>
               <div class="column is-half">
                 <p class="label">They've Rated</p>
-                <p class="subtitle is-6">{{ stats.currentLength }} Movies</p>
+                <p class="subtitle is-6">{{ stats.compareLength }} Movies</p>
               </div>
               <div class="column is-half">
                 <p class="label">Overlap Percentage:</p>

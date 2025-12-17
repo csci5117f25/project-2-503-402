@@ -3,7 +3,7 @@ import MovieCompare from '@/components/Report/MovieCompare.vue'
 import { BCarouselList } from 'buefy'
 import MovieCompareKey from './MovieCompareKey.vue'
 import { ChevronLeft, ChevronRight, Pause } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { ref, } from 'vue'
 
 interface CompareItem {
   topImage: string
@@ -26,9 +26,18 @@ defineProps({
 const MAX_PER_PAGE = ref(5)
 const active = ref(0)
 
-if (window.innerWidth < 968) {
-  MAX_PER_PAGE.value = 2
+// if (window.innerWidth < 968) {
+//   MAX_PER_PAGE.value = 2
+// }
+
+function fixResize() {
+  if(window.innerWidth < 900)
+    MAX_PER_PAGE.value = 2
+  else {
+    MAX_PER_PAGE.value = Math.floor(Math.max((window.innerWidth - 640), 0) / 320) + 3
+  }
 }
+window.addEventListener('resize', fixResize)
 
 // TODO if time move movieCompare to here, no need for that component
 </script>
@@ -51,7 +60,6 @@ if (window.innerWidth < 968) {
       v-model="active"
       :data="list"
       :items-to-show="MAX_PER_PAGE"
-      :items-to-list="MAX_PER_PAGE"
       :arrow="true"
       :arrow-hover="true"
     >
