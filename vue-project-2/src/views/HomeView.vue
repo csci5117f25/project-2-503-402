@@ -41,7 +41,7 @@
               </div>
 
               <div class="metric-sub" v-if="yearStats.favoriteRating !== null">
-                Your rating: {{ Math.round(yearStats.favoriteRating) }}/10
+                Your rating: {{ Math.round(Number(yearStats.favoriteRating)) }}/10
               </div>
               <div class="metric-sub" v-else>—</div>
             </div>
@@ -367,12 +367,12 @@ async function handleToggleRewatch(payload: unknown) {
 async function handleDelete(payload: unknown) {
   const r = payload as ReviewCardData
   if (!userId.value) return
-  const ok = window.confirm(`Delete your review for "${r.title}"?`)
-  if (!ok) return
 
   reviewSavingId.value = r.movieId
+
   try {
     await removeUserReview(userId.value, r.movieId)
+
     reviews.value = reviews.value.filter((x) => x.movieId !== r.movieId)
 
     if (page.value > totalPages.value) page.value = totalPages.value

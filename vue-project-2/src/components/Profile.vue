@@ -330,7 +330,10 @@ function closeMoviesList() {
         <h2>Statistics Summary</h2>
       </div>
 
-      <div v-if="isLoadingStats" class="loading-stats">Loading your statistics...</div>
+      <div v-if="isLoadingStats" class="loading-stats">
+        <div class="loading-spinner" aria-label="Loading" />
+        <p>Loading your statistics</p>
+      </div>
 
       <div v-else class="statistics-section">
         <div class="stat-card clickable" @click="fetchWatchedMovies">
@@ -410,7 +413,19 @@ function closeMoviesList() {
           <div class="movie-info">
             <h3>{{ movie.title }}</h3>
             <p v-if="movie.year" class="movie-year">{{ movie.year }}</p>
-            <div v-if="movie.rating !== undefined" class="movie-rating">⭐ {{ movie.rating }}</div>
+            <div v-if="movie.rating !== undefined" class="movie-rating">
+              <svg
+                class="movie-rating-star"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                />
+              </svg>
+              {{ movie.rating }}
+            </div>
             <p v-if="movie.comment" class="movie-comment">{{ movie.comment }}</p>
           </div>
         </div>
