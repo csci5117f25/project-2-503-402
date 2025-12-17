@@ -29,7 +29,7 @@ function handleActive(name: string) {
 
 <template>
 
-  <div v-if="typeof(userId) === 'string'">
+  <div v-if="typeof(userId) === 'string' && reports.length > 0">
     <div
       v-for="report in reports"
       :key="report.name ? report.name: report.uid"
@@ -40,8 +40,13 @@ function handleActive(name: string) {
       <SingleSimilarityReport v-if="active === report.uid"
         :current="userId"
         :compare="report.uid"
+        :max-listings="20"
       ></SingleSimilarityReport>
     </div>
+  </div>
+
+  <div v-else class="drop-box">
+    <label class="label">No Reports Recorded!</label>
   </div>
 
 </template>

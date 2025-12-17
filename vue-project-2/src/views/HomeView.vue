@@ -81,7 +81,10 @@
           <ReviewCard
             v-for="(review, index) in pagedReviews"
             :key="review.movieId"
-            :review="review"
+            :review="{
+              ...review,
+              budget: review.budget ?? null,
+            }"
             :busy="reviewSavingId === review.movieId"
             :ref="(cmp) => setCardRef(cmp, index)"
             @save="handleCardSave"
