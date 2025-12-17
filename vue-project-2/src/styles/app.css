@@ -247,3 +247,120 @@ main {
     font-size: 0.85rem;
   }
 }
+/* Mobile Navigation Footer */
+.mobile-footer {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  box-shadow: 0 -4px 20px rgba(220, 38, 38, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 9999;
+  padding: 0.5rem 0 0.75rem 0;
+}
+
+.mobile-footer nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.mobile-footer-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.2s ease;
+  border-radius: 0.75rem;
+  min-width: 64px;
+}
+
+.mobile-footer-btn:hover,
+.mobile-footer-btn.active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.mobile-footer-btn svg {
+  width: 28px;
+  height: 28px;
+  stroke: white;
+  stroke-width: 2;
+  fill: none;
+  transition: all 0.2s ease;
+}
+
+.mobile-footer-btn:hover svg {
+  transform: scale(1.1);
+}
+
+.mobile-footer-btn.active svg {
+  fill: white;
+  stroke: white;
+}
+
+@media (max-width: 768px) {
+  .logo {
+    font-size: 1.4rem;
+  }
+
+  /* Hide desktop nav on mobile */
+  .header-content nav {
+    display: none;
+  }
+
+  .header-content {
+    flex-direction: row;
+    padding: 0.85rem 1.5rem;
+  }
+
+  /* Show mobile footer */
+  .mobile-footer {
+    display: block;
+  }
+
+  /* Add padding to main content so footer doesn't cover it */
+  main {
+    padding-bottom: 100px;
+    background: #1a1a1a;
+  }
+
+  /* Ensure form buttons are visible */
+  .review-card {
+    margin-bottom: 2rem;
+  }
+
+  .auth-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .welcome-text {
+    font-size: 0.85rem;
+  }
+
+  .login-btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.9rem;
+  }
+
+  .login-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .logout-btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.9rem;
+  }
+}

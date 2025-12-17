@@ -113,75 +113,74 @@ async function handleSubmit(event: SubmitEvent) {
 </script>
 
 <template>
-  <div class="review-card">
-    <form @submit.prevent="handleSubmit" >
-      <MovieSearch
-      v-model:id="movieId"
-      >
-      </MovieSearch>
+  <div class="form-page-container">
+    <div class="review-card">
+      <form @submit.prevent="handleSubmit">
+        <MovieSearch v-model:id="movieId"></MovieSearch>
 
-      <div class="ratings-container">
-      <label class="label bulma-label">Your Rating (0-10)</label>
+        <div class="ratings-container">
+          <label class="label bulma-label">Your Rating (0-10)</label>
 
-      <div class="columns">
-        <!-- Column for the numeric input -->
-        <div class="column">
-          <div class="control has-icons-left">
-            <input
-              v-model="rating"
-              class="input bulma-input"
-              name="rating"
-              required
-              type="number"
-              step="0.5"
-              min="1"
-              max="10"
-            />
-            <span class="icon is-small is-left">
-              <Star color="black"/>
-            </span>
+          <div class="columns">
+            <!-- Column for the numeric input -->
+            <div class="column">
+              <div class="control has-icons-left">
+                <input
+                  v-model="rating"
+                  class="input bulma-input"
+                  name="rating"
+                  required
+                  type="number"
+                  step="0.5"
+                  min="1"
+                  max="10"
+                />
+                <span class="icon is-small is-left">
+                  <Star color="black" />
+                </span>
+              </div>
+            </div>
+
+            <!-- Column for the star rating component -->
+            <div class="column is-flex is-justify-content-center">
+              <vue3StarRatings
+                v-model="rating"
+                :star-size="30"
+                :number-of-stars="10"
+                :disable-click="false"
+                name="rating"
+              />
+            </div>
           </div>
         </div>
 
-        <!-- Column for the star rating component -->
-        <div class="column is-flex is-justify-content-center">
-          <vue3StarRatings
-            v-model="rating"
-            :star-size="30"
-            :number-of-stars="10"
-            :disable-click="false"
-            name="rating"
-          />
+        <label class="label bulma-label">Personal Thoughts</label>
+        <div class="control">
+          <textarea
+            class="textarea bulma-input"
+            name="comment"
+            rows="4"
+            maxlength="2000"
+            placeholder="What made you remember this movie?"
+            v-model="comment"
+          ></textarea>
         </div>
-      </div>
+
+        <div class="field is-grouped isgrouped-center" style="margin-top: 20px">
+          <p class="control">
+            <button class="button" type="submit" value="post">Submit</button>
+          </p>
+          <p class="control">
+            <button class="button" type="submit" value="draft">Save as Draft</button>
+          </p>
+          <p class="control">
+            <button class="button" type="reset" @click="movieId = undefined" value="reset">
+              Clear
+            </button>
+          </p>
+        </div>
+      </form>
     </div>
-
-
-      <label class="label bulma-label">Personal Thoughts</label>
-      <div class="control">
-        <textarea
-          class="textarea bulma-input"
-          name="comment"
-          rows="4"
-          maxlength="2000"
-          placeholder="What made you remember this movie?"
-          v-model="comment"
-        ></textarea>
-      </div>
-
-    <div class="field is-grouped isgrouped-center" style="margin-top: 20px;">
-      <p class="control">
-        <button class="button" type="submit" value="post">Submit</button>
-      </p>
-      <p class="control">
-        <button class="button" type="submit" value="draft">Save as Draft</button>
-      </p>
-      <p class="control">
-        <button class="button" type="reset" @click="movieId=undefined" value="reset">Clear</button>
-      </p>
-    </div>
-
-    </form>
   </div>
 </template>
 

@@ -128,7 +128,59 @@ function onDetect(detectedCodes) {
   </div>
 </template>
 
+
 <style scoped>
+.qr-page-container {
+  min-height: 100vh;
+  width: 100%;
+  padding: 2.5rem;
+  background: #1a1a1a;
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-page-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(239, 68, 68, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(239, 68, 68, 0.08) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+.qr-page-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+.qr-body {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+}
+
+.qr-section {
+  width: 100%;
+  background: rgba(30, 30, 30, 0.88);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(18px);
+}
+
 .qr-camera {
   position: relative;
   width: 100%;
@@ -169,36 +221,32 @@ function onDetect(detectedCodes) {
   z-index: 2;
 }
 
-@media (min-width: 768px) {
-  .qr-body {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: center;
+.qr-text {
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .qr-page-container {
+    padding: 1.5rem;
   }
 
-  .qr-text {
-    flex: 1 1 0;
-  }
-
-  .qr-camera {
-    flex: 0 0 320px; /* camera gets a fixed-ish width */
-    max-width: 360px;
+  .qr-section {
+    padding: 1.5rem;
   }
 }
 
-/* Really small screens: keep some breathing room */
-@media (max-width: 400px) {
-  .qr-body {
-    padding: 0.5rem;
+@media (max-width: 480px) {
+  .qr-page-container {
+    padding: 1rem;
+  }
+
+  .qr-section {
+    padding: 1rem;
+    border-radius: 1rem;
   }
 
   .qr-camera {
     border-radius: 0.5rem;
   }
-}
-
-.qr-text {
-  /* background-color: white; */
-  color: white;
 }
 </style>
