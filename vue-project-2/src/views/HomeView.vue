@@ -40,8 +40,9 @@
                 {{ yearStats.favoriteTitle }}
               </div>
 
+              <!-- ✅ no rounding -->
               <div class="metric-sub" v-if="yearStats.favoriteRating !== null">
-                Your rating: {{ Math.round(Number(yearStats.favoriteRating)) }}/10
+                Your rating: {{ yearStats.favoriteRating }}/10
               </div>
               <div class="metric-sub" v-else>—</div>
             </div>
@@ -126,7 +127,9 @@
             @click="scrollToReview(review.movieId)"
           >
             <span class="sidebar-movie-title">{{ review.title }}</span>
-            <span class="sidebar-rating">{{ Math.round(review.user_rating) }}/10</span>
+
+            <!-- ✅ decimal-safe -->
+            <span class="sidebar-rating">{{ formatUserRating(review.user_rating) }}/10</span>
           </button>
         </div>
       </aside>
@@ -190,15 +193,23 @@ function setCardRef(cmp: unknown, index: number) {
 
 function setSidebarItemRef(el: unknown, index: number) {
   const node = (el as { $el?: unknown } | null)?.$el ?? el
-
-  if (node instanceof HTMLElement) {
-    sidebarItemRefs.value[index] = node
-  }
+  if (node instanceof HTMLElement) sidebarItemRefs.value[index] = node
 }
 
 function formatOneDecimal(n: number | null | undefined) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—'
   return n.toFixed(1)
+}
+
+/** ✅ Display user ratings without rounding to an integer.
+ *  - 7   -> "7"
+ *  - 7.5 -> "7.5"
+ *  - 7.4 -> "7.4"
+ */
+function formatUserRating(n: number | null | undefined) {
+  if (n === null || n === undefined || Number.isNaN(n)) return '—'
+  const v = Math.round(n * 10) / 10
+  return Number.isInteger(v) ? String(v) : v.toFixed(1)
 }
 
 function deltaValue(r: ReviewCardData) {
@@ -286,14 +297,14 @@ const yearStats = computed(() => {
     hotTakeDelta,
     hotTakeYou:
       hotTake?.user_rating !== null && hotTake?.user_rating !== undefined
-        ? hotTake.user_rating.toFixed(1)
+        ? formatUserRating(hotTake.user_rating)
         : '—',
     hotTakeTmdb: hotTake ? formatOneDecimal(hotTake.rating_avg) : '—',
 
     favoriteTitle: favorite?.title ?? '—',
     favoriteRating:
       favorite?.user_rating !== null && favorite?.user_rating !== undefined
-        ? favorite.user_rating.toFixed(1)
+        ? formatUserRating(favorite.user_rating)
         : null,
 
     rewatchCount,
@@ -430,7 +441,6 @@ async function loadHomeReviews(uid: string) {
         rating_count: item.rating_count,
         budget: item.budget && item.budget > 0 ? item.budget : undefined,
         genresText,
-
         user_rating: item.rating,
         user_thoughts: item.comment,
         draft: item.draft ?? false,

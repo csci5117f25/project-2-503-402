@@ -1,82 +1,98 @@
 <script setup lang="ts">
 import FormCard from '@/components/FormCard.vue'
 import ReviewCard from '@/components/ReviewCard.vue'
-import { tmdbImageURL, type UserMovieReview } from '@/movies'
+import { tmdbImageURL, type UserMovieReview, type MovieData } from '@/movies'
 import { computed, ref } from 'vue'
 
-const review = ref<UserMovieReview | undefined>(undefined)
-const inputId = ref<number | undefined>(undefined)
+const formRef = ref<InstanceType<typeof FormCard> | null>(null)
+
+const previewMovie = ref<MovieData | null>(null)
+const previewMovieId = ref<number | null>(null)
+const previewRating = ref<number | null>(null)
+const previewThoughts = ref<string | null>(null)
+
 const successMsg = ref(false)
 const today = new Date()
 
-const previewMovie = ref<UserMovieReview | null>(null)
-const previewMovieId = ref<number | null>(null)
-const previewUserRating = ref<number | null>(null)
-const previewUserThoughts = ref<string | null>(null)
-
-const placeholderReview = ref<UserMovieReview>({
+const placeholderCard = computed(() => ({
+  movieId: 0,
   title: 'Review Preview',
+  tagline: 'Click Preview to see how your card will look.',
   release_date: today.toLocaleDateString(),
-  tagline: 'Click Preview to see your card.',
-  runtime: 0,
-  budget: 0,
-  genres: {},
+  runtime: null,
   rating_avg: 0,
   rating_count: 0,
-  cached_at: today,
-  rating: 0,
-  comment: '',
-} as UserMovieReview)
+  budget: null,
+  genresText: '',
+  posterUrl: '',
+  user_rating: null,
+  user_thoughts: null,
+  rewatch: false,
+}))
 
-function handleMovie(id: number | null, data?: UserMovieReview) {
-  if (data && id) {
-    review.value = data
-    inputId.value = id
-  } else {
-    review.value = undefined
-    inputId.value = undefined
+const hasPreview = computed(() => !!previewMovie.value && previewMovieId.value !== null)
+
+const previewCardData = computed(() => {
+  if (!hasPreview.value || !previewMovie.value || previewMovieId.value === null) return null
+
+  const m = previewMovie.value
+
+  return {
+    movieId: previewMovieId.value,
+    title: m.title ?? 'Untitled',
+    tagline: m.tagline ?? null,
+    release_date: m.release_date ?? today.toLocaleDateString(),
+    runtime: m.runtime ?? null,
+    rating_avg: m.rating_avg ?? 0,
+    rating_count: m.rating_count ?? 0,
+    budget: m.budget ?? null,
+    genresText: m.genres ? Object.values(m.genres).join(', ') : '',
+    posterUrl: m.poster_path ? (tmdbImageURL(m.poster_path) ?? '') : '',
+
+    user_rating: previewRating.value,
+    user_thoughts: previewThoughts.value,
+
+    rewatch: false,
   }
+})
+
+function clearPreview() {
+  previewMovie.value = null
+  previewMovieId.value = null
+  previewRating.value = null
+  previewThoughts.value = null
 }
 
-function handlePreview(payload: { movieId: number; rating: number; comment: string }) {
-  if (!review.value || !inputId.value) return
-  if (payload.movieId !== inputId.value) return
+function handlePreview(payload: {
+  movieId: number | null
+  movie: MovieData | null
+  rating: number | null
+  comment: string | null
+}) {
+  if (!payload.movieId || !payload.movie) {
+    clearPreview()
+    return
+  }
 
-  previewMovie.value = review.value
-  previewMovieId.value = inputId.value
-  previewUserRating.value = payload.rating
-  previewUserThoughts.value = payload.comment
+  previewMovieId.value = payload.movieId
+  previewMovie.value = payload.movie
+  previewRating.value = payload.rating
+  previewThoughts.value = payload.comment
+}
+
+function handleCleared() {
+  clearPreview()
 }
 
 function handleSubmit(success: boolean) {
   if (!success) return
+
   successMsg.value = true
-  setTimeout(() => (successMsg.value = false), 3000)
+  setTimeout(() => (successMsg.value = false), 2500)
+
+  formRef.value?.resetForm()
+  clearPreview()
 }
-
-const previewCard = computed(() => {
-  if (!previewMovie.value || !previewMovieId.value) {
-    return {
-      ...placeholderReview.value,
-      movieId: 0,
-      posterUrl: '',
-      genresText: '',
-      user_rating: null,
-      user_thoughts: null,
-    }
-  }
-
-  const base = previewMovie.value
-
-  return {
-    ...base,
-    movieId: previewMovieId.value,
-    posterUrl: base.poster_path ? (tmdbImageURL(base.poster_path) ?? '') : '',
-    genresText: base.genres ? Object.values(base.genres).join(', ') : '',
-    user_rating: previewUserRating.value ?? 0,
-    user_thoughts: previewUserThoughts.value ?? '',
-  }
-})
 </script>
 
 <template>
@@ -84,9 +100,16 @@ const previewCard = computed(() => {
     <div class="form-container">
       <h1 class="title">Add a Review</h1>
 
-      <ReviewCard :review="previewCard" />
+      <ReviewCard v-if="previewCardData" :review="previewCardData" key="preview-real" />
 
-      <FormCard @update:movie="handleMovie" @submit="handleSubmit" @preview="handlePreview" />
+      <ReviewCard v-else :review="placeholderCard" key="preview-empty" />
+
+      <FormCard
+        ref="formRef"
+        @preview="handlePreview"
+        @cleared="handleCleared"
+        @submit="handleSubmit"
+      />
 
       <transition name="fade">
         <span v-if="successMsg">Submitted Successfully!</span>

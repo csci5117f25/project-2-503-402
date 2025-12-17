@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import MovieSearch from '@/components/MovieSearch.vue'
 import { useCurrentUser } from 'vuefire'
-import { computed, ref, onMounted, defineComponent, watch } from 'vue'
+import { computed, ref, onMounted, watch, defineExpose } from 'vue'
 import {
   addUserReview,
   getMovie,
@@ -13,66 +13,99 @@ import { useRoute } from 'vue-router'
 import vue3StarRatings from 'vue3-star-ratings'
 import { Star } from 'lucide-vue-next'
 
-defineComponent({
-  components: { vue3StarRatings },
-})
-
-const emit = defineEmits(['update:movie', 'submit', 'preview'])
+const emit = defineEmits<{
+  (
+    e: 'preview',
+    payload: {
+      movieId: number | null
+      movie: MovieData | null
+      rating: number | null
+      comment: string | null
+    },
+  ): void
+  (e: 'cleared'): void
+  (e: 'submit', success: boolean): void
+}>()
 
 const route = useRoute()
 
 const movieId = ref<number | undefined>(undefined)
-const currentUser = useCurrentUser()
-const userId = computed(() => (currentUser.value?.uid ? currentUser.value.uid : null))
-
 const rating = ref<number | undefined>(undefined)
 const comment = ref<string>('')
 
-function handlePreview() {
-  if (!movieId.value) return
-  emit('preview', {
-    movieId: movieId.value,
-    rating: rating.value ?? 0,
-    comment: comment.value ?? '',
-  })
+const currentUser = useCurrentUser()
+const userId = computed(() => (currentUser.value?.uid ? currentUser.value.uid : null))
+
+const selectedMovie = ref<MovieData | null>(null)
+
+function resetForm() {
+  movieId.value = undefined
+  rating.value = undefined
+  comment.value = ''
+  selectedMovie.value = null
+
+  emit('cleared')
+
+  emit('preview', { movieId: null, movie: null, rating: null, comment: null })
 }
+
+defineExpose({ resetForm })
 
 onMounted(async () => {
   if (route.query.movieId) movieId.value = parseInt(route.query.movieId as string)
-  if (route.query.rating) rating.value = parseInt(route.query.rating as string)
+  if (route.query.rating) rating.value = parseFloat(route.query.rating as string)
   if (route.query.comment) comment.value = route.query.comment as string
 })
 
 watch(rating, () => {
-  if (!rating.value || rating.value % 0.5 === 0) return
-  if (rating.value % 1 < 0.5) rating.value = Math.floor(rating.value) + 0.5
-  else rating.value = Math.ceil(rating.value)
+  if (rating.value === undefined || rating.value === null) return
+  const v = rating.value
+  const snapped = Math.round(v * 2) / 2
+  if (snapped !== v) rating.value = snapped
 })
 
 watch(movieId, async () => {
   if (!movieId.value) {
-    rating.value = 0
+    rating.value = undefined
     comment.value = ''
-    emit('update:movie', null)
+    selectedMovie.value = null
+    emit('preview', { movieId: null, movie: null, rating: null, comment: null })
     return
   }
+
   try {
     if (userId.value) {
       const userReview = await getUserMovieReview(userId.value, movieId.value)
       if (userReview) {
         rating.value = userReview.rating
         comment.value = userReview.comment
-        emit('update:movie', movieId.value, userReview as MovieData)
+        selectedMovie.value = userReview as MovieData
         return
       }
     }
+
     const data = await getMovie(movieId.value)
-    if (data) emit('update:movie', movieId.value, data)
+    selectedMovie.value = data ?? null
   } catch (err) {
     console.log(err)
     alert('Invalid movie selected!')
+    selectedMovie.value = null
   }
 })
+
+function handlePreviewClick() {
+  if (!movieId.value || !selectedMovie.value) {
+    emit('preview', { movieId: null, movie: null, rating: null, comment: null })
+    return
+  }
+
+  emit('preview', {
+    movieId: movieId.value,
+    movie: selectedMovie.value,
+    rating: rating.value ?? null,
+    comment: comment.value?.trim() ? comment.value : null,
+  })
+}
 
 async function handleSubmit(event: SubmitEvent) {
   if (!userId.value) {
@@ -83,7 +116,7 @@ async function handleSubmit(event: SubmitEvent) {
     emit('submit', false)
     throw new Error('Invalid movie selected')
   }
-  if (!rating.value) {
+  if (rating.value === undefined || rating.value === null) {
     emit('submit', false)
     throw new Error('You must rate this movie!')
   }
@@ -96,10 +129,12 @@ async function handleSubmit(event: SubmitEvent) {
 
   await addUserReview(userId.value, movieId.value, review)
 
-  movieId.value = undefined
-  rating.value = undefined
-  comment.value = ''
+  resetForm()
   emit('submit', true)
+}
+
+function handleClearClick() {
+  resetForm()
 }
 </script>
 
@@ -107,7 +142,7 @@ async function handleSubmit(event: SubmitEvent) {
   <div class="form-page-container">
     <div class="review-card">
       <form @submit.prevent="handleSubmit">
-        <MovieSearch v-model:id="movieId"></MovieSearch>
+        <MovieSearch v-model:id="movieId" />
 
         <div class="ratings-container">
           <label class="label bulma-label">Your Rating (0-10)</label>
@@ -116,13 +151,13 @@ async function handleSubmit(event: SubmitEvent) {
             <div class="column">
               <div class="control has-icons-left">
                 <input
-                  v-model="rating"
+                  v-model.number="rating"
                   class="input bulma-input"
                   name="rating"
                   required
                   type="number"
                   step="0.5"
-                  min="1"
+                  min="0"
                   max="10"
                 />
                 <span class="icon is-small is-left">
@@ -155,20 +190,21 @@ async function handleSubmit(event: SubmitEvent) {
           ></textarea>
         </div>
 
-        <div class="field is-grouped isgrouped-center" style="margin-top: 20px">
+        <div class="field is-grouped isgrouped-center" style="margin-top: 20px; gap: 10px">
           <p class="control">
-            <button class="button" type="button" @click="handlePreview">Preview</button>
+            <button class="button" type="button" @click="handlePreviewClick">Preview</button>
           </p>
+
           <p class="control">
             <button class="button" type="submit" value="post">Submit</button>
           </p>
+
           <p class="control">
             <button class="button" type="submit" value="draft">Save as Draft</button>
           </p>
+
           <p class="control">
-            <button class="button" type="reset" @click="movieId = undefined" value="reset">
-              Clear
-            </button>
+            <button class="button" type="button" @click="handleClearClick">Clear</button>
           </p>
         </div>
       </form>

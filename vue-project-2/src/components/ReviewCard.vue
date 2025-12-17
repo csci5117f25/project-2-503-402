@@ -3,10 +3,10 @@
     class="review-card flip-card"
     :class="{ flipped: isFlipped, expanded: expandedOnMobile }"
     @click="handleCardClick"
-    @keydown="handleKeydown"
     role="button"
     tabindex="0"
     :aria-pressed="isFlipped"
+    @keydown="handleCardKeydown"
   >
     <div class="flip-inner">
       <div class="flip-face flip-front">
@@ -39,7 +39,7 @@
                   <div class="global-count">{{ formatCount(review.rating_count) }} ratings</div>
                 </div>
 
-                <div class="card-actions">
+                <div class="card-actions" v-if="!isMobile || isFlipped">
                   <button
                     type="button"
                     class="expand-btn"
@@ -53,14 +53,14 @@
                     v-if="!isEditing"
                     type="button"
                     class="icon-btn"
-                    aria-label="Edit review"
                     @click.stop="startEdit"
                     :disabled="busy"
+                    aria-label="Edit review"
+                    title="Edit"
                   >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                       <path
-                        d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm18-11.5a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75L21 5.75z"
-                        fill="currentColor"
+                        d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92 2.83H5v-.92l9.06-9.06.92.92L5.92 20.08zM20.71 7.04a1.003 1.003 0 0 0 0-1.42L18.37 3.29a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.83z"
                       />
                     </svg>
                   </button>
@@ -69,15 +69,13 @@
                     v-if="isEditing"
                     type="button"
                     class="icon-btn primary"
-                    aria-label="Save review"
                     @click.stop="saveEdit"
                     :disabled="busy"
+                    aria-label="Save"
+                    title="Save"
                   >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M17 3H5a2 2 0 0 0-2 2v14l4-4h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"
-                        fill="currentColor"
-                      />
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                     </svg>
                   </button>
 
@@ -85,16 +83,14 @@
                     v-if="isEditing"
                     type="button"
                     class="icon-btn"
-                    aria-label="Cancel edit"
                     @click.stop="cancelEdit"
                     :disabled="busy"
+                    aria-label="Cancel"
+                    title="Cancel"
                   >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                       <path
-                        d="M18 6L6 18M6 6l12 12"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
+                        d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L12 13.41l-6.29 6.3-1.42-1.41L10.59 12 4.29 5.71 5.7 4.29 12 10.59l6.29-6.3z"
                       />
                     </svg>
                   </button>
@@ -102,19 +98,13 @@
                   <button
                     type="button"
                     class="icon-btn danger"
-                    aria-label="Delete review"
                     @click.stop="$emit('delete', review)"
                     :disabled="busy"
+                    aria-label="Delete review"
+                    title="Delete"
                   >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M6 7h12M9 7V5h6v2m-8 3v8m4-8v8m4-8v8M5 7l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        fill="none"
-                      />
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z" />
                     </svg>
                   </button>
                 </div>
@@ -127,13 +117,18 @@
 
                 <div v-if="!isEditing" class="rating-line">
                   <span class="chip">
-                    <svg class="chip-star" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg
+                      class="chip-star"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
                       <path
-                        d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                        fill="currentColor"
+                        d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
                       />
                     </svg>
-                    {{ Math.round(review.user_rating ?? 0) }}/10
+
+                    {{ formatUserRating(review.user_rating) }}/10
                   </span>
 
                   <span
@@ -144,6 +139,19 @@
                   >
                     {{ deltaText(review) }}
                   </span>
+
+                  <button
+                    v-if="isMobile"
+                    type="button"
+                    class="rewatch-toggle inline"
+                    :class="{ on: !!review.rewatch }"
+                    @click.stop="$emit('toggle-rewatch', review)"
+                    :disabled="busy"
+                    :title="review.rewatch ? 'Marked as rewatchable' : 'Mark as rewatchable'"
+                  >
+                    <span class="rewatch-dot" />
+                    <span class="rewatch-text">{{ review.rewatch ? 'Rewatch' : 'One-time' }}</span>
+                  </button>
                 </div>
 
                 <div v-else class="edit-rating-line">
@@ -152,8 +160,8 @@
                     type="number"
                     min="0"
                     max="10"
-                    step="1"
-                    inputmode="numeric"
+                    step="0.5"
+                    inputmode="decimal"
                     v-model.number="editRating"
                     :disabled="busy"
                     @click.stop
@@ -162,6 +170,7 @@
                 </div>
 
                 <button
+                  v-if="!isMobile"
                   type="button"
                   class="rewatch-toggle"
                   :class="{ on: !!review.rewatch }"
@@ -235,13 +244,95 @@
       </div>
 
       <div class="flip-face flip-back">
-        <div class="flip-back-inner">
-          <div class="flip-back-title">Your thoughts</div>
+        <div class="flip-back-inner" @click.stop>
+          <div class="flip-back-top">
+            <div class="flip-back-title">Your thoughts</div>
+
+            <div class="flip-back-actions" v-if="isMobile">
+              <button
+                v-if="!isEditing"
+                type="button"
+                class="icon-btn"
+                @click.stop="startEditFromBack"
+                :disabled="busy"
+                aria-label="Edit"
+                title="Edit"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path
+                    d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92 2.83H5v-.92l9.06-9.06.92.92L5.92 20.08zM20.71 7.04a1.003 1.003 0 0 0 0-1.42L18.37 3.29a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.83z"
+                  />
+                </svg>
+              </button>
+
+              <button
+                v-if="isEditing"
+                type="button"
+                class="icon-btn primary"
+                @click.stop="saveEdit"
+                :disabled="busy"
+                aria-label="Save"
+                title="Save"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                </svg>
+              </button>
+
+              <button
+                v-if="isEditing"
+                type="button"
+                class="icon-btn"
+                @click.stop="cancelEdit"
+                :disabled="busy"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path
+                    d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L12 13.41l-6.29 6.3-1.42-1.41L10.59 12 4.29 5.71 5.7 4.29 12 10.59l6.29-6.3z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
           <div class="flip-back-movie">{{ review.title }}</div>
-          <p class="flip-back-text">
+
+          <div v-if="isMobile && isEditing" class="flip-back-form">
+            <div class="flip-back-field">
+              <div class="flip-back-label">Rating</div>
+              <div class="flip-back-rating">
+                <input
+                  class="flip-back-input"
+                  type="number"
+                  min="0"
+                  max="10"
+                  step="0.5"
+                  inputmode="decimal"
+                  v-model.number="editRating"
+                  :disabled="busy"
+                />
+                <span class="flip-back-outof">/10</span>
+              </div>
+            </div>
+
+            <div class="flip-back-field">
+              <div class="flip-back-label">Thoughts</div>
+              <textarea
+                class="flip-back-textarea"
+                rows="5"
+                v-model="editThoughts"
+                :disabled="busy"
+              />
+            </div>
+          </div>
+
+          <p v-else class="flip-back-text">
             {{ review.user_thoughts || '—' }}
           </p>
-          <div class="flip-back-hint">Tap to flip back</div>
+
+          <div class="flip-back-hint" v-if="isMobile && !isEditing">Tap to flip back</div>
         </div>
       </div>
     </div>
@@ -259,12 +350,12 @@ type ReviewCard = {
   runtime: number | null
   rating_avg: number
   rating_count: number
-  budget?: number
+  budget: number | null
   genresText: string
-  user_rating?: number
-  user_thoughts?: string
-  rewatch?: boolean
-  posterUrl?: string
+  user_rating: number | null
+  user_thoughts: string | null
+  rewatch?: boolean | null
+  posterUrl?: string | null
 }
 
 const props = defineProps<{
@@ -280,28 +371,57 @@ const emit = defineEmits<{
   (e: 'save', payload: { movieId: number; rating: number | null; thoughts: string | null }): void
 }>()
 
+const isMobile = ref(false)
+const expanded = ref(false)
 const isFlipped = ref(false)
+
+function measureMobile() {
+  isMobile.value = window.matchMedia('(max-width: 640px)').matches
+  if (!isMobile.value) {
+    expanded.value = false
+    isFlipped.value = false
+    isEditing.value = false
+  }
+}
+
+onMounted(() => {
+  measureMobile()
+  window.addEventListener('resize', measureMobile, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', measureMobile)
+})
+
+const expandedOnMobile = computed(() => isMobile.value && expanded.value)
+
+function toggleExpanded() {
+  if (!isMobile.value) return
+  expanded.value = !expanded.value
+}
+
 function toggleFlip() {
   if (!isMobile.value) return
+  if (busy?.value) return
   if (isEditing.value) return
   isFlipped.value = !isFlipped.value
 }
 
 function handleCardClick(e: MouseEvent) {
   if (!isMobile.value) return
-
   const el = e.target as HTMLElement | null
   if (!el) return
   if (el.closest('button, a, input, textarea, select, label')) return
   toggleFlip()
 }
 
-// ✅ FIX: allow space inside textarea/input; only flip on Enter/Space when NOT focused on controls
-function handleKeydown(e: KeyboardEvent) {
+function handleCardKeydown(e: KeyboardEvent) {
   if (!isMobile.value) return
 
-  const el = e.target as HTMLElement | null
-  if (el?.closest('button, a, input, textarea, select, label')) return
+  const target = e.target as HTMLElement | null
+  if (!target) return
+
+  if (target.closest('input, textarea, select, button, a, label')) return
 
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault()
@@ -325,72 +445,67 @@ watch(
 )
 
 function startEdit() {
+  if (busy?.value) return
   isEditing.value = true
   isFlipped.value = false
   editRating.value = review.value.user_rating ?? null
   editThoughts.value = review.value.user_thoughts ?? ''
 }
 
+function startEditFromBack() {
+  if (!isMobile.value) return
+  if (busy?.value) return
+  isEditing.value = true
+  isFlipped.value = true
+  editRating.value = review.value.user_rating ?? null
+  editThoughts.value = review.value.user_thoughts ?? ''
+}
+
 function cancelEdit() {
+  if (busy?.value) return
   isEditing.value = false
   editRating.value = review.value.user_rating ?? null
   editThoughts.value = review.value.user_thoughts ?? ''
 }
 
+/** ✅ UPDATED: do NOT round, keep decimals (0.5 etc) */
 function saveEdit() {
-  const rating =
-    editRating.value === null || Number.isNaN(editRating.value)
-      ? null
-      : Math.round(editRating.value)
+  if (busy?.value) return
+
+  const r = editRating.value
+  const rating = r === null || r === undefined || Number.isNaN(r) ? null : Math.round(r * 10) / 10
+
   const thoughts = editThoughts.value?.trim() ? editThoughts.value.trim() : null
 
   emit('save', { movieId: review.value.movieId, rating, thoughts })
   isEditing.value = false
 }
 
-const isMobile = ref(false)
-const expanded = ref(false)
-
-function measureMobile() {
-  isMobile.value = window.matchMedia('(max-width: 640px)').matches
-  if (!isMobile.value) {
-    expanded.value = false
-    isFlipped.value = false
-  }
-}
-
-onMounted(() => {
-  measureMobile()
-  window.addEventListener('resize', measureMobile, { passive: true })
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', measureMobile)
-})
-
-const expandedOnMobile = computed(() => isMobile.value && expanded.value)
-
-function toggleExpanded() {
-  if (!isMobile.value) return
-  expanded.value = !expanded.value
-}
-
 function formatOneDecimal(n: number | null | undefined) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—'
   return n.toFixed(1)
 }
+
+function formatUserRating(n: number | null | undefined) {
+  if (n === null || n === undefined || Number.isNaN(n)) return '—'
+  const v = Math.round(n * 10) / 10
+  return Number.isInteger(v) ? String(v) : v.toFixed(1)
+}
+
 function formatCount(n: number | null | undefined) {
   if (n === null || n === undefined || Number.isNaN(n)) return '0'
   return Intl.NumberFormat('en-US').format(n)
 }
+
 function formatDate(iso: string) {
   if (!iso) return 'Unknown'
   const d = new Date(iso + 'T00:00:00')
   if (Number.isNaN(d.getTime())) return iso
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
+
 function formatMoney(n: number) {
-  return new Intl.NumberFormat('en-US', {
+  return Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0,
@@ -402,17 +517,20 @@ function deltaValue(r: ReviewCard) {
   if (r.rating_avg === null || r.rating_avg === undefined) return null
   return r.user_rating - r.rating_avg
 }
+
 function deltaText(r: ReviewCard) {
   const d = deltaValue(r)
   if (d === null) return ''
   const sign = d > 0 ? '+' : ''
   return `${sign}${d.toFixed(1)}`
 }
+
 function deltaTitle(r: ReviewCard) {
   const d = deltaValue(r)
   if (d === null) return ''
-  return `You (${formatOneDecimal(r.user_rating)}) vs TMDB (${formatOneDecimal(r.rating_avg)})`
+  return `You (${formatUserRating(r.user_rating)}) vs TMDB (${formatOneDecimal(r.rating_avg)})`
 }
+
 function deltaClass(r: ReviewCard) {
   const d = deltaValue(r)
   if (d === null) return 'neutral'
