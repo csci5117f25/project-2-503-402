@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import FormCard from '@/components/FormCard.vue'
 import ReviewCard from '@/components/ReviewCard.vue'
-import { tmdbImageURL, type UserMovieReview, type MovieData } from '@/movies'
+import { tmdbImageURL, type MovieData } from '@/movies'
 import { computed, ref } from 'vue'
 
 const formRef = ref<InstanceType<typeof FormCard> | null>(null)

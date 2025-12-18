@@ -189,7 +189,7 @@ function handleClearClick() {
           ></textarea>
         </div>
 
-        <div class="field is-grouped isgrouped-center" style="margin-top: 20px; gap: 10px">
+        <div class="field is-grouped isgrouped-center is-grouped-multiline mt-5" style="margin-top: 20px; gap: 10px">
           <p class="control">
             <button class="button" type="button" @click="handlePreviewClick">Preview</button>
           </p>
