@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import MovieSearch from '@/components/MovieSearch.vue'
 import { useCurrentUser } from 'vuefire'
-import { computed, ref, onMounted, watch, defineExpose } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import {
   addUserReview,
   getMovie,

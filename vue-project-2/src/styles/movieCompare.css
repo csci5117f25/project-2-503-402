@@ -1,6 +1,7 @@
 .poster-img {
   margin: 5px;
   height: 12.5vh;
+  max-width: 150px;
   border: 2px solid white;
   border-radius: 5px;
 }

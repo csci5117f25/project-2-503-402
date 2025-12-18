@@ -24,6 +24,7 @@ defineProps({
 // SET THIS for max elements visible on static
 // ALSO need to change width of carousel container...
 const MAX_PER_PAGE = ref(5)
+MAX_PER_PAGE.value = Math.min(Math.floor(Math.max((window.innerWidth - 250), 0) / 250) + 2, 5)
 const active = ref(0)
 
 // if (window.innerWidth < 968) {
@@ -31,11 +32,7 @@ const active = ref(0)
 // }
 
 function fixResize() {
-  if(window.innerWidth < 900)
-    MAX_PER_PAGE.value = 2
-  else {
-    MAX_PER_PAGE.value = Math.floor(Math.max((window.innerWidth - 640), 0) / 320) + 3
-  }
+  MAX_PER_PAGE.value = Math.min(Math.floor(Math.max((window.innerWidth - 250), 0) / 250) + 2, 5)
 }
 window.addEventListener('resize', fixResize)
 
@@ -84,13 +81,15 @@ window.addEventListener('resize', fixResize)
 .carousel-container {
   display: flex;
   flex-direction: row;
+  /* width: 50vw;
+   */
   width: 70vh;
   gap: 10px;
 }
 
 @media (max-width: 968px) {
   .carousel-container {
-    width: 40vh;
+    width: 90vw;
   }
 }
 </style>
