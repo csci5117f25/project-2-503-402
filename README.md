@@ -4,9 +4,9 @@ CSCI 5117, Fall 2025, [assignment description](https://canvas.umn.edu/courses/51
 
 ## App Info:
 
-* Team Name: TODO
-* App Name: TODO
-* App Link: <https://TODO.com/>
+* Team Name: The 503+402
+* App Name: MovieSim
+* App Link: https://p2-502-402.firebaseapp.com/
 
 ### Students
 
@@ -21,15 +21,16 @@ CSCI 5117, Fall 2025, [assignment description](https://canvas.umn.edu/courses/51
 **Describe the most challenging features you implemented
 (one sentence per bullet, maximum 4 bullets):**
 
-* ...
+* Similarity report - the backend behind the report (generating similarities) was hard to figure out and didn't come out the best.
 
 Which (if any) device integration(s) does your app support?
 
-* ...
+* Camera - QR code scanning
+* Donwload - download QR code
 
 Which (if any) progressive web app feature(s) does your app support?
 
-* ...
+* Camera - QR code scanning
 
 
 
@@ -61,7 +62,7 @@ The 'profile' page of our app is not really a profile in the traditional sense. 
 
 **Is there anything special we need to know in order to effectively test your app? (optional):**
 
-* ...
+* When a report is generated for one user, it is automatically generated and displayed on the other user's device under 'reports'
 
 
 
@@ -70,8 +71,25 @@ The 'profile' page of our app is not really a profile in the traditional sense. 
 **[Add a screenshot of each key page](https://stackoverflow.com/questions/10189356/how-to-add-screenshot-to-readmes-in-github-repository)
 along with a very brief caption:**
 
-![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
+![Login Splash](/images/login.PNG)
 
+You must login first to use our website
+
+![Home page](images/home.PNG)
+
+The home page displays all movie reviews, along with functionality to edit and delete exisitng reviews
+
+![Form page](images/form.PNG)
+
+Submit new movie entries to the database
+
+![Profile page](images/profile.PNG)
+
+Look at stats for your profile and get your QR code for report generation
+
+![Report page](images/report.PNG)
+
+Generate a report with a friend using an uploaded or scanned QR code - see what you agree and differ on
 
 
 ## External Dependencies
@@ -79,7 +97,7 @@ along with a very brief caption:**
 **Document integrations with 3rd Party code or services here.
 Please do not document required libraries (e.g., VUE, Firebase, vuefire).**
 
-* Library or service name: description of use
+* TMDB - the movie database supports our movie data collection
 * ...
 
 **If there's anything else you would like to disclose about how your project
