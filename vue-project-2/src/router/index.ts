@@ -6,6 +6,7 @@ import FormView from '@/views/FormView.vue'
 // import ReportView from '@/views/ReportView.vue'
 import { getCurrentUser } from 'vuefire'
 import LoginView from '@/views/LoginView.vue'
+import ErrorView from '@/views/ErrorView.vue'
 // import TestView from '@/views/TestView.vue'
 
 const router = createRouter({
@@ -51,6 +52,11 @@ const router = createRouter({
     //   name: 'test',
     //   component: TestView,
     // },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'notFound',
+      component: ErrorView
+    }
   ],
 })
 
