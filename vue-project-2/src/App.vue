@@ -4,6 +4,8 @@ import { getCurrentUser, useCurrentUser, useFirebaseAuth } from 'vuefire'
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
 import { provide, computed } from 'vue'
 import router from './router'
+import { doc, setDoc } from 'firebase/firestore'
+import { db } from './firebase_conf'
 
 const user = useCurrentUser()
 const auth = useFirebaseAuth()
@@ -30,7 +32,9 @@ async function login() {
   try {
     if (auth) {
       await signInWithPopup(auth, provider)
-      if (!(await getCurrentUser())) throw new Error('Invalid user')
+      const user = await getCurrentUser()
+      if (!user) throw new Error('Invalid user')
+      setDoc(doc(db, `users/${user.uid}`), {name: getFirstName(user.displayName)}, { merge: true })
       router.push('/')
     }
   } catch (error) {
